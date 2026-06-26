@@ -1,2 +1,12 @@
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/PaperTradingApplication.java
+/Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/config/JwtUtil.java
+/Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/config/SecurityConfig.java
+/Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/controller/AuthController.java
+/Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/controller/GlobalExceptionHandler.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/controller/HealthController.java
+/Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/dto/AuthResponse.java
+/Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/dto/LoginRequest.java
+/Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/dto/RegisterRequest.java
+/Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/model/User.java
+/Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/repository/UserRepository.java
+/Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/service/AuthService.java
