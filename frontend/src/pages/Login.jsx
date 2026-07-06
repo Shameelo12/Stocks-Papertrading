@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
-  Container,
   Box,
   TextField,
   Button,
   Typography,
   Alert,
-  Paper,
   CircularProgress,
 } from '@mui/material';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import { useAuth } from '../context/AuthContext';
 import API from '../api/axios';
 
@@ -38,42 +37,85 @@ export default function Login() {
   };
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #f8f9fa 0%, #f0f2f5 100%)',
-      }}
-    >
-      <Container maxWidth="sm">
-        <Paper
-          elevation={0}
-          sx={{
-            padding: 5,
-            borderRadius: 3,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-            border: '1px solid rgba(0,0,0,0.04)',
-          }}
-        >
-          <Box sx={{ textAlign: 'center', marginBottom: 4 }}>
-            <Typography
-              variant="h4"
-              sx={{
-                background: 'linear-gradient(135deg, #05a854 0%, #0d8f47 100%)',
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                marginBottom: 1,
-              }}
-            >
-              Paper Trading
+    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+      {/* Left Side - Hero Section */}
+      <Box
+        sx={{
+          flex: 1,
+          background: 'linear-gradient(135deg, #05a854 0%, #0d8f47 100%)',
+          color: 'white',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: 4,
+          position: 'relative',
+          overflow: 'hidden',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            width: '400px',
+            height: '400px',
+            background: 'rgba(255, 255, 255, 0.1)',
+            borderRadius: '50%',
+            top: '-100px',
+            right: '-100px',
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            width: '300px',
+            height: '300px',
+            background: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: '50%',
+            bottom: '-50px',
+            left: '-50px',
+          },
+        }}
+      >
+        <Box sx={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: '400px' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', marginBottom: 3 }}>
+            <TrendingUpIcon sx={{ fontSize: 60, color: 'white' }} />
+          </Box>
+          <Typography variant="h3" sx={{ fontWeight: 800, marginBottom: 2 }}>
+            Paper Trading
+          </Typography>
+          <Typography variant="h6" sx={{ fontWeight: 300, marginBottom: 3, lineHeight: 1.6 }}>
+            Learn to invest with $10,000 in virtual cash. Build your trading skills risk-free.
+          </Typography>
+          <Box sx={{ marginTop: 4, paddingTop: 3, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+            <Typography variant="body2" sx={{ marginBottom: 2 }}>
+              ✓ Real-time stock data
             </Typography>
-            <Typography variant="body1" sx={{ color: '#666' }}>
-              Trade stocks with $10,000 in virtual cash
+            <Typography variant="body2" sx={{ marginBottom: 2 }}>
+              ✓ Portfolio tracking
+            </Typography>
+            <Typography variant="body2">
+              ✓ Advanced analytics
             </Typography>
           </Box>
+        </Box>
+      </Box>
+
+      {/* Right Side - Login Form */}
+      <Box
+        sx={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: 4,
+          backgroundColor: '#fff',
+        }}
+      >
+        <Box sx={{ width: '100%', maxWidth: '380px' }}>
+          <Typography variant="h5" sx={{ fontWeight: 700, marginBottom: 1 }}>
+            Welcome back
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'text.secondary', marginBottom: 4 }}>
+            Sign in to your account to continue trading
+          </Typography>
 
           <form onSubmit={handleSubmit}>
             <TextField
@@ -87,6 +129,12 @@ export default function Login() {
               placeholder="your@email.com"
               disabled={loading}
               variant="outlined"
+              sx={{
+                marginBottom: 2,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '10px',
+                },
+              }}
             />
 
             <TextField
@@ -100,10 +148,16 @@ export default function Login() {
               placeholder="••••••••"
               disabled={loading}
               variant="outlined"
+              sx={{
+                marginBottom: 2,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '10px',
+                },
+              }}
             />
 
             {error && (
-              <Alert severity="error" sx={{ marginTop: 2, marginBottom: 2 }}>
+              <Alert severity="error" sx={{ marginBottom: 3, borderRadius: '10px' }}>
                 {error}
               </Alert>
             )}
@@ -112,16 +166,21 @@ export default function Login() {
               type="submit"
               fullWidth
               variant="contained"
+              disabled={loading}
               sx={{
-                marginTop: 3,
-                padding: '12px 24px',
+                marginTop: 2,
+                padding: '14px 24px',
                 fontSize: '16px',
+                fontWeight: 600,
                 backgroundColor: '#05a854',
+                borderRadius: '10px',
+                boxShadow: '0 4px 12px rgba(5, 168, 84, 0.3)',
                 '&:hover': {
                   backgroundColor: '#0d8f47',
+                  boxShadow: '0 6px 16px rgba(5, 168, 84, 0.4)',
                 },
+                transition: 'all 0.3s ease',
               }}
-              disabled={loading}
             >
               {loading ? (
                 <CircularProgress size={24} sx={{ color: 'white' }} />
@@ -132,22 +191,33 @@ export default function Login() {
           </form>
 
           <Box sx={{ marginTop: 3, textAlign: 'center' }}>
-            <Typography variant="body2" sx={{ color: '#666' }}>
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               Don't have an account?{' '}
               <Link
                 to="/register"
                 style={{
                   color: '#05a854',
-                  fontWeight: 600,
+                  fontWeight: 700,
                   textDecoration: 'none',
+                  transition: 'color 0.3s ease',
                 }}
               >
-                Sign up here
+                Create one
               </Link>
             </Typography>
           </Box>
-        </Paper>
-      </Container>
+        </Box>
+      </Box>
+
+      {/* Responsive - Stack on mobile */}
+      <style>{`
+        @media (max-width: 768px) {
+          body {
+            display: flex;
+            flex-direction: column;
+          }
+        }
+      `}</style>
     </Box>
   );
 }
