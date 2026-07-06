@@ -117,17 +117,18 @@ export default function Portfolio() {
         <Typography variant="h4" sx={{ fontWeight: 700, marginBottom: 1 }}>
           Portfolio Analysis
         </Typography>
-        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          Your holdings and allocation breakdown
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            Your holdings and allocation breakdown
+          </Typography>
           {lastUpdated && (
             <Chip
               label={`Updated: ${lastUpdated.toLocaleTimeString()}`}
               size="small"
               variant="outlined"
-              sx={{ marginLeft: 2 }}
             />
           )}
-        </Typography>
+        </Box>
       </Box>
 
       {/* Key Metrics */}

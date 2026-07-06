@@ -85,7 +85,7 @@ export default function Sidebar({ open, onClose }) {
                   primary={item.label}
                   primaryTypographyProps={{
                     variant: 'body2',
-                    fontWeight: 'inherit',
+                    sx: { fontWeight: 'inherit' },
                   }}
                 />
               </ListItemButton>
@@ -130,7 +130,7 @@ export default function Sidebar({ open, onClose }) {
                   primary={item.label}
                   primaryTypographyProps={{
                     variant: 'body2',
-                    fontWeight: 'inherit',
+                    sx: { fontWeight: 'inherit' },
                   }}
                 />
               </ListItemButton>

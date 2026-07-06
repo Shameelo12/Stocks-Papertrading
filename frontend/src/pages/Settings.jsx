@@ -23,11 +23,13 @@ import InfoIcon from '@mui/icons-material/Info';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { usePortfolio } from '../hooks/usePortfolio';
 import { useNavigate } from 'react-router-dom';
 
 export default function Settings() {
   const { isDark, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
+  const { portfolio } = usePortfolio();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -70,7 +72,7 @@ export default function Settings() {
                   Account Balance
                 </Typography>
                 <Typography variant="body2" sx={{ fontWeight: 600, color: '#05a854' }}>
-                  ${user?.balance?.toFixed(2) || '0.00'}
+                  ${(portfolio?.currentBalance || user?.balance || 0).toFixed(2)}
                 </Typography>
               </Box>
             </Grid>

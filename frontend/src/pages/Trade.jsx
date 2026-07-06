@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   TextField,
@@ -28,6 +28,7 @@ export default function Trade() {
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchContainerRef = useRef(null);
   const [stockPrice, setStockPrice] = useState(null);
   const [shares, setShares] = useState('');
   const [loading, setLoading] = useState(false);
@@ -50,6 +51,19 @@ export default function Trade() {
       setShowSuggestions(false);
     }
   }, [searchQuery]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    if (showSuggestions) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showSuggestions]);
 
   const fetchSuggestions = async () => {
     try {
@@ -200,7 +214,7 @@ export default function Trade() {
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Box sx={{ flex: 1, width: '100%', paddingX: 2, paddingY: 4 }}>
         <Box sx={{ textAlign: 'center', marginBottom: 5, maxWidth: '1200px', marginX: 'auto', width: '100%' }}>
-          <Typography variant="h3" sx={{ fontWeight: 700, color: '#1a1a1a', marginBottom: 1 }}>
+          <Typography variant="h3" sx={{ fontWeight: 700, color: 'text.primary', marginBottom: 1 }}>
             Trade Stocks
           </Typography>
           <Typography variant="body1" sx={{ color: '#666' }}>
@@ -226,7 +240,7 @@ export default function Trade() {
               Find Your Stock
             </Typography>
 
-            <Box sx={{ position: 'relative' }}>
+            <Box sx={{ position: 'relative' }} ref={searchContainerRef}>
               <form onSubmit={handleSearch}>
                 <TextField
                   fullWidth
@@ -277,8 +291,8 @@ export default function Trade() {
                           <ListItemText
                             primary={stock.ticker}
                             secondary={stock.name}
-                            primaryTypographyProps={{ fontWeight: 600, color: '#05a854' }}
-                            secondaryTypographyProps={{ color: '#666' }}
+                            primaryTypographyProps={{ sx: { fontWeight: 600, color: '#05a854' } }}
+                            secondaryTypographyProps={{ sx: { color: '#666' } }}
                           />
                         </ListItemButton>
                       ))}
@@ -487,10 +501,10 @@ export default function Trade() {
                 <Box sx={{ marginBottom: 2 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', marginBottom: 1 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      {tradeType === 'buy' ? 'Buying Power' : 'Holdings'}
+                      {tradeType === 'buy' ? 'Buying Power' : 'Shares Held'}
                     </Typography>
                     <Typography variant="body2" sx={{ fontWeight: 700, color: '#05a854' }}>
-                      ${tradeType === 'buy' ? buyingPower.toFixed(2) : (userHolding ? parseFloat(userHolding.shares).toFixed(2) : '0.00')}
+                      {tradeType === 'buy' ? `$${buyingPower.toFixed(2)}` : (userHolding ? parseFloat(userHolding.shares).toFixed(2) : '0.00')}
                     </Typography>
                   </Box>
                   <LinearProgress
