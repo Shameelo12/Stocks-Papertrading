@@ -22,6 +22,7 @@ import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { usePortfolio } from '../hooks/usePortfolio';
 import API from '../api/axios';
+import StockDetailsModal from '../components/StockDetailsModal';
 
 const COLORS = ['#05a854', '#1f3a5f', '#ff6b35', '#f7931e', '#2196f3', '#9c27b0', '#e91e63', '#009688'];
 
@@ -29,6 +30,8 @@ export default function Portfolio() {
   const { portfolio, loading, error, lastUpdated } = usePortfolio(5000); // Auto-refresh every 5 seconds
   const [historyData, setHistoryData] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(true);
+  const [selectedTicker, setSelectedTicker] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -327,7 +330,7 @@ export default function Portfolio() {
                 </TableHead>
                 <TableBody>
                   {holdingsData.map((holding) => (
-                    <TableRow key={holding.ticker} hover>
+                    <TableRow key={holding.ticker} hover onClick={() => { setSelectedTicker(holding.ticker); setModalOpen(true); }} sx={{ cursor: 'pointer' }}>
                       <TableCell sx={{ fontWeight: 700 }}>
                         <Chip
                           label={holding.ticker}
@@ -337,7 +340,9 @@ export default function Portfolio() {
                             fontWeight: 700,
                             borderColor: holding.color,
                             color: holding.color,
+                            cursor: 'pointer',
                           }}
+                          onClick={(e) => { e.stopPropagation(); setSelectedTicker(holding.ticker); setModalOpen(true); }}
                         />
                       </TableCell>
                       <TableCell align="right">{parseFloat(holding.shares).toFixed(2)}</TableCell>
@@ -366,6 +371,13 @@ export default function Portfolio() {
           </CardContent>
         </Card>
       )}
+
+      {/* Stock Details Modal */}
+      <StockDetailsModal
+        open={modalOpen}
+        ticker={selectedTicker}
+        onClose={() => setModalOpen(false)}
+      />
     </Container>
   );
 }

@@ -96,7 +96,7 @@ export default function Navbar({ onMenuClick }) {
         </Box>
 
         {/* Center Section - Search */}
-        <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', marginX: 2, display: { xs: 'none', md: 'flex' } }}>
+        <Box sx={{ flex: 1, justifyContent: 'center', marginX: 2, display: { xs: 'none', md: 'flex' } }}>
           <TextField
             placeholder="Search stocks..."
             variant="outlined"
