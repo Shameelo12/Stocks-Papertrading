@@ -47,6 +47,7 @@
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/service/AlphaVantageService.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/service/AnalyticsService.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/service/AuthService.java
+/Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/service/FinnhubService.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/service/MockPriceService.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/service/OrderService.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/service/PortfolioService.java

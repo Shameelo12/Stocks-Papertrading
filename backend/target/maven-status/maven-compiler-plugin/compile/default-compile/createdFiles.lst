@@ -32,6 +32,7 @@ com/papertrading/controller/PriceAlertController.class
 com/papertrading/service/OrderService.class
 com/papertrading/config/RestTemplateConfig.class
 com/papertrading/repository/PriceAlertRepository.class
+com/papertrading/service/FinnhubService.class
 com/papertrading/service/PortfolioService.class
 com/papertrading/dto/LoginRequest.class
 com/papertrading/controller/StockController.class
