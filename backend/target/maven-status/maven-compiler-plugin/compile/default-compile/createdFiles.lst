@@ -1,3 +1,4 @@
+com/papertrading/repository/PendingOrderRepository.class
 com/papertrading/dto/PortfolioResponse.class
 com/papertrading/dto/CreatePriceAlertRequest.class
 com/papertrading/dto/StockSuggestion.class
@@ -5,6 +6,7 @@ com/papertrading/dto/PriceAlertDTO.class
 com/papertrading/service/AnalyticsService.class
 com/papertrading/config/JwtAuthenticationFilter.class
 com/papertrading/dto/PortfolioHistoryDTO.class
+com/papertrading/dto/CreateLimitOrderRequest.class
 com/papertrading/controller/PortfolioController.class
 com/papertrading/model/PriceAlert.class
 com/papertrading/model/PriceAlert$AlertType.class
@@ -13,17 +15,21 @@ com/papertrading/PaperTradingApplication.class
 com/papertrading/controller/TradeController.class
 com/papertrading/repository/WatchlistRepository.class
 com/papertrading/config/SecurityConfig.class
+com/papertrading/controller/OrderController.class
 com/papertrading/controller/GlobalExceptionHandler.class
 com/papertrading/model/Transaction.class
+com/papertrading/model/PendingOrder$OrderStatus.class
 com/papertrading/service/PriceAlertService.class
 com/papertrading/dto/AuthResponse.class
 com/papertrading/dto/RegisterRequest.class
 com/papertrading/service/AuthService.class
+com/papertrading/model/PendingOrder$OrderType.class
 com/papertrading/service/WatchlistService.class
 com/papertrading/dto/StockPerformanceDTO.class
 com/papertrading/dto/TransactionDTO.class
 com/papertrading/dto/TradeResponse.class
 com/papertrading/controller/PriceAlertController.class
+com/papertrading/service/OrderService.class
 com/papertrading/config/RestTemplateConfig.class
 com/papertrading/repository/PriceAlertRepository.class
 com/papertrading/service/PortfolioService.class
@@ -31,6 +37,7 @@ com/papertrading/dto/LoginRequest.class
 com/papertrading/controller/StockController.class
 com/papertrading/dto/WatchlistDTO.class
 com/papertrading/repository/HoldingRepository.class
+com/papertrading/model/PendingOrder.class
 com/papertrading/model/Transaction$Type.class
 com/papertrading/controller/AuthController.class
 com/papertrading/model/User.class
@@ -50,4 +57,5 @@ com/papertrading/config/JwtAuthenticationProvider.class
 com/papertrading/model/Holding.class
 com/papertrading/service/AlphaVantageService.class
 com/papertrading/dto/TradeStatsDTO.class
+com/papertrading/dto/PendingOrderDTO.class
 com/papertrading/controller/AnalyticsController.class

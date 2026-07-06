@@ -34,6 +34,13 @@ export default function Trade() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [tradeType, setTradeType] = useState('buy');
+  const [orderType, setOrderType] = useState('market');
+  const [limitPrice, setLimitPrice] = useState('');
+  const [pendingOrders, setPendingOrders] = useState([]);
+
+  useEffect(() => {
+    fetchPendingOrders();
+  }, []);
 
   useEffect(() => {
     if (searchQuery.trim()) {
@@ -90,24 +97,32 @@ export default function Trade() {
     }
 
     const sharesNum = parseFloat(shares);
+
+    if (orderType === 'limit' && (!limitPrice || parseFloat(limitPrice) <= 0)) {
+      setError('Please enter a valid limit price');
+      return;
+    }
+
     const totalCost = sharesNum * parseFloat(stockPrice.price);
 
-    // Validation logic
-    if (tradeType === 'buy') {
-      if (totalCost > portfolio?.currentBalance) {
-        setError(`Insufficient buying power. Required: $${totalCost.toFixed(2)}, Available: $${portfolio?.currentBalance?.toFixed(2)}`);
-        return;
-      }
-    } else {
-      // For sell
-      const holding = portfolio?.holdings?.find(h => h.ticker === stockPrice.ticker);
-      if (!holding) {
-        setError(`You don't own any shares of ${stockPrice.ticker}`);
-        return;
-      }
-      if (sharesNum > parseFloat(holding.shares)) {
-        setError(`You only own ${parseFloat(holding.shares).toFixed(2)} shares of ${stockPrice.ticker}`);
-        return;
+    // Validation logic for market orders only
+    if (orderType === 'market') {
+      if (tradeType === 'buy') {
+        if (totalCost > portfolio?.currentBalance) {
+          setError(`Insufficient buying power. Required: $${totalCost.toFixed(2)}, Available: $${portfolio?.currentBalance?.toFixed(2)}`);
+          return;
+        }
+      } else {
+        // For sell
+        const holding = portfolio?.holdings?.find(h => h.ticker === stockPrice.ticker);
+        if (!holding) {
+          setError(`You don't own any shares of ${stockPrice.ticker}`);
+          return;
+        }
+        if (sharesNum > parseFloat(holding.shares)) {
+          setError(`You only own ${parseFloat(holding.shares).toFixed(2)} shares of ${stockPrice.ticker}`);
+          return;
+        }
       }
     }
 
@@ -116,24 +131,59 @@ export default function Trade() {
     setSuccess('');
 
     try {
-      const endpoint = tradeType === 'buy' ? '/trade/buy' : '/trade/sell';
-      const response = await API.post(endpoint, {
-        ticker: stockPrice.ticker,
-        shares: sharesNum,
-      });
+      if (orderType === 'limit') {
+        // Create limit order
+        await API.post('/orders', {
+          ticker: stockPrice.ticker,
+          type: tradeType.toUpperCase(),
+          shares: sharesNum,
+          limitPrice: parseFloat(limitPrice),
+        });
+        setSuccess(`Limit ${tradeType.toUpperCase()} order created!`);
+        fetchPendingOrders();
+      } else {
+        // Market order
+        const endpoint = tradeType === 'buy' ? '/trade/buy' : '/trade/sell';
+        const response = await API.post(endpoint, {
+          ticker: stockPrice.ticker,
+          shares: sharesNum,
+        });
 
-      // Refetch portfolio to update all values
-      await refetchPortfolio();
+        // Refetch portfolio to update all values
+        await refetchPortfolio();
 
-      setSuccess(`${tradeType.toUpperCase()} successful! New balance: $${response.data.balance.toFixed(2)}`);
+        setSuccess(`${tradeType.toUpperCase()} successful! New balance: $${response.data.balance.toFixed(2)}`);
+      }
+
       setShares('');
+      setLimitPrice('');
       setStockPrice(null);
       setSearchQuery('');
       setTimeout(() => setSuccess(''), 4000);
     } catch (err) {
-      setError(err.response?.data?.error || `${tradeType} failed. Please try again.`);
+      setError(err.response?.data?.error || `Order failed. Please try again.`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPendingOrders = async () => {
+    try {
+      const response = await API.get('/orders/pending');
+      setPendingOrders(response.data);
+    } catch (err) {
+      console.error('Failed to fetch pending orders:', err);
+    }
+  };
+
+  const handleCancelOrder = async (orderId) => {
+    try {
+      await API.delete(`/orders/${orderId}`);
+      fetchPendingOrders();
+      setSuccess('Order cancelled');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError('Failed to cancel order');
     }
   };
 
@@ -369,6 +419,51 @@ export default function Trade() {
                   inputProps={{ step: '0.01', min: '0' }}
                   sx={{ marginBottom: 2 }}
                 />
+
+                <Box sx={{ marginBottom: 2 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, marginBottom: 1 }}>
+                    Order Type
+                  </Typography>
+                  <ButtonGroup fullWidth size="small">
+                    <Button
+                      variant={orderType === 'market' ? 'contained' : 'outlined'}
+                      onClick={() => setOrderType('market')}
+                      sx={{
+                        backgroundColor: orderType === 'market' ? '#05a854' : 'transparent',
+                        color: orderType === 'market' ? 'white' : '#05a854',
+                        borderColor: '#05a854',
+                      }}
+                    >
+                      Market
+                    </Button>
+                    <Button
+                      variant={orderType === 'limit' ? 'contained' : 'outlined'}
+                      onClick={() => setOrderType('limit')}
+                      sx={{
+                        backgroundColor: orderType === 'limit' ? '#05a854' : 'transparent',
+                        color: orderType === 'limit' ? 'white' : '#05a854',
+                        borderColor: '#05a854',
+                      }}
+                    >
+                      Limit
+                    </Button>
+                  </ButtonGroup>
+                </Box>
+
+                {orderType === 'limit' && (
+                  <TextField
+                    fullWidth
+                    label="Limit Price"
+                    type="number"
+                    value={limitPrice}
+                    onChange={(e) => setLimitPrice(e.target.value)}
+                    disabled={loading}
+                    variant="outlined"
+                    margin="normal"
+                    inputProps={{ step: '0.01', min: '0' }}
+                    sx={{ marginBottom: 2 }}
+                  />
+                )}
               </CardContent>
             </Card>
           </Box>
@@ -476,6 +571,65 @@ export default function Trade() {
               >
                 {loading ? <CircularProgress size={24} sx={{ color: 'white' }} /> : `${tradeType.toUpperCase()} ${shares || '0'} ${stockPrice?.ticker || 'Shares'}`}
               </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {pendingOrders.length > 0 && (
+          <Card
+            elevation={0}
+            sx={{
+              boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+              borderRadius: '16px',
+              border: '1px solid rgba(0,0,0,0.04)',
+              maxWidth: '1200px',
+              marginX: 'auto',
+              width: '100%',
+            }}
+          >
+            <CardContent sx={{ padding: 3 }}>
+              <Typography variant="h6" sx={{ marginBottom: 3, fontWeight: 700 }}>
+                Pending Limit Orders ({pendingOrders.length})
+              </Typography>
+              <Box sx={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: 'left', paddingBottom: '8px', fontWeight: 600 }}>Ticker</th>
+                      <th style={{ textAlign: 'right', paddingBottom: '8px', fontWeight: 600 }}>Type</th>
+                      <th style={{ textAlign: 'right', paddingBottom: '8px', fontWeight: 600 }}>Shares</th>
+                      <th style={{ textAlign: 'right', paddingBottom: '8px', fontWeight: 600 }}>Limit Price</th>
+                      <th style={{ textAlign: 'center', paddingBottom: '8px', fontWeight: 600 }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendingOrders.map((order) => (
+                      <tr key={order.id} style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+                        <td style={{ padding: '12px 0' }}>
+                          <Chip label={order.ticker} size="small" sx={{ fontWeight: 600 }} />
+                        </td>
+                        <td style={{ textAlign: 'right', padding: '12px 0' }}>
+                          <Chip
+                            label={order.type}
+                            size="small"
+                            sx={{
+                              backgroundColor: order.type === 'BUY' ? 'rgba(5, 168, 84, 0.2)' : 'rgba(211, 47, 47, 0.2)',
+                              color: order.type === 'BUY' ? '#05a854' : '#d32f2f',
+                            }}
+                          />
+                        </td>
+                        <td style={{ textAlign: 'right', padding: '12px 0' }}>{parseFloat(order.shares).toFixed(2)}</td>
+                        <td style={{ textAlign: 'right', padding: '12px 0' }}>${parseFloat(order.limitPrice).toFixed(2)}</td>
+                        <td style={{ textAlign: 'center', padding: '12px 0' }}>
+                          <Button size="small" color="error" onClick={() => handleCancelOrder(order.id)}>
+                            Cancel
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </Box>
             </CardContent>
           </Card>
         )}
