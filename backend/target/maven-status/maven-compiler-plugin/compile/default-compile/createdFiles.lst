@@ -1,10 +1,14 @@
+com/papertrading/config/RestTemplateConfig.class
 com/papertrading/controller/HealthController.class
 com/papertrading/controller/GlobalExceptionHandler.class
 com/papertrading/repository/UserRepository.class
 com/papertrading/dto/LoginRequest.class
+com/papertrading/controller/StockController.class
 com/papertrading/dto/AuthResponse.class
 com/papertrading/dto/RegisterRequest.class
 com/papertrading/service/AuthService.class
+com/papertrading/dto/StockPriceResponse.class
+com/papertrading/service/PolygonService.class
 com/papertrading/config/JwtUtil.class
 com/papertrading/controller/AuthController.class
 com/papertrading/PaperTradingApplication.class
