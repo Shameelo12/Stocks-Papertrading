@@ -44,35 +44,32 @@ export default function Dashboard() {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
-      <AppBar position="static" sx={{ backgroundColor: '#fff', color: '#333', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
+      <AppBar position="static" sx={{ backgroundColor: '#fff', color: '#333', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
         <Toolbar>
-          <Typography variant="h6" sx={{ flex: 1, fontWeight: 600, color: '#667eea' }}>
+          <Typography variant="h6" sx={{ flex: 1, fontWeight: 700, background: 'linear-gradient(135deg, #05a854 0%, #0d8f47 100%)', backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             Paper Trading
           </Typography>
-          <Box sx={{ display: 'flex', gap: 2, marginRight: 3 }}>
+          <Box sx={{ display: 'flex', gap: 1, marginRight: 3 }}>
             <Button
-              color="inherit"
               onClick={() => navigate('/trade')}
-              sx={{ color: '#667eea', textTransform: 'none' }}
+              sx={{ color: '#1a1a1a', textTransform: 'none', fontWeight: 500 }}
             >
               Trade
             </Button>
             <Button
-              color="inherit"
               onClick={() => navigate('/history')}
-              sx={{ color: '#667eea', textTransform: 'none' }}
+              sx={{ color: '#1a1a1a', textTransform: 'none', fontWeight: 500 }}
             >
               History
             </Button>
           </Box>
-          <Typography sx={{ marginRight: 2, fontSize: '14px' }}>
+          <Typography sx={{ marginRight: 2, fontSize: '14px', color: '#666' }}>
             {user?.email}
           </Typography>
           <Button
-            color="inherit"
             onClick={logout}
-            sx={{ color: '#667eea', textTransform: 'none' }}
+            sx={{ color: '#05a854', textTransform: 'none', fontWeight: 500 }}
           >
             Logout
           </Button>
@@ -82,15 +79,15 @@ export default function Dashboard() {
       <Container maxWidth="lg" sx={{ flex: 1, paddingTop: 4, paddingBottom: 4 }}>
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', padding: 4 }}>
-            <CircularProgress />
+            <CircularProgress sx={{ color: '#05a854' }} />
           </Box>
         ) : (
           <>
             <Grid container spacing={3} sx={{ marginBottom: 4 }}>
               <Grid item xs={12} sm={6} md={3}>
-                <Card sx={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
+                <Card sx={{ background: 'linear-gradient(135deg, #1f3a5f 0%, #2a5298 100%)', color: 'white' }}>
                   <CardContent>
-                    <Typography variant="body2" sx={{ opacity: 0.9, marginBottom: 1 }}>
+                    <Typography variant="body2" sx={{ opacity: 0.85, marginBottom: 1, fontWeight: 500 }}>
                       Cash Balance
                     </Typography>
                     <Typography variant="h5" sx={{ fontWeight: 700 }}>
@@ -100,9 +97,9 @@ export default function Dashboard() {
                 </Card>
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
-                <Card sx={{ background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)', color: 'white' }}>
+                <Card sx={{ background: 'linear-gradient(135deg, #05a854 0%, #0d8f47 100%)', color: 'white' }}>
                   <CardContent>
-                    <Typography variant="body2" sx={{ opacity: 0.9, marginBottom: 1 }}>
+                    <Typography variant="body2" sx={{ opacity: 0.85, marginBottom: 1, fontWeight: 500 }}>
                       Invested
                     </Typography>
                     <Typography variant="h5" sx={{ fontWeight: 700 }}>
@@ -112,10 +109,10 @@ export default function Dashboard() {
                 </Card>
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
-                <Card sx={{ background: 'linear-gradient(135deg, #ffc107 0%, #ff9800 100%)', color: 'white' }}>
+                <Card sx={{ background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)', color: 'white' }}>
                   <CardContent>
-                    <Typography variant="body2" sx={{ opacity: 0.9, marginBottom: 1 }}>
-                      Portfolio Value
+                    <Typography variant="body2" sx={{ opacity: 0.85, marginBottom: 1, fontWeight: 500 }}>
+                      Total Value
                     </Typography>
                     <Typography variant="h5" sx={{ fontWeight: 700 }}>
                       ${portfolio?.totalPortfolioValue.toFixed(2)}
@@ -126,18 +123,18 @@ export default function Dashboard() {
               <Grid item xs={12} sm={6} md={3}>
                 <Card
                   sx={{
-                    background: `linear-gradient(135deg, ${portfolio?.totalGainLoss >= 0 ? '#28a745' : '#dc3545'} 0%, ${portfolio?.totalGainLoss >= 0 ? '#20c997' : '#c82333'} 100%)`,
+                    background: `linear-gradient(135deg, ${portfolio?.totalGainLoss >= 0 ? '#05a854' : '#d32f2f'} 0%, ${portfolio?.totalGainLoss >= 0 ? '#0d8f47' : '#c62828'} 100%)`,
                     color: 'white',
                   }}
                 >
                   <CardContent>
-                    <Typography variant="body2" sx={{ opacity: 0.9, marginBottom: 1 }}>
+                    <Typography variant="body2" sx={{ opacity: 0.85, marginBottom: 1, fontWeight: 500 }}>
                       Total Gain/Loss
                     </Typography>
                     <Typography variant="h5" sx={{ fontWeight: 700 }}>
                       ${portfolio?.totalGainLoss.toFixed(2)}
                     </Typography>
-                    <Typography variant="caption">
+                    <Typography variant="caption" sx={{ opacity: 0.9 }}>
                       ({portfolio?.totalGainLossPercent.toFixed(2)}%)
                     </Typography>
                   </CardContent>
@@ -146,27 +143,27 @@ export default function Dashboard() {
             </Grid>
 
             {portfolio?.holdings.length > 0 ? (
-              <Card sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+              <Card elevation={0} sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.04)' }}>
                 <CardContent sx={{ padding: 0 }}>
-                  <Typography variant="h6" sx={{ padding: 3, marginBottom: 0, fontWeight: 600 }}>
+                  <Typography variant="h6" sx={{ padding: 3, marginBottom: 0, fontWeight: 700 }}>
                     Your Holdings
                   </Typography>
                   <TableContainer>
                     <Table>
-                      <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
+                      <TableHead sx={{ backgroundColor: '#f8f9fa', borderTop: '1px solid rgba(0,0,0,0.04)' }}>
                         <TableRow>
-                          <TableCell sx={{ fontWeight: 600 }}>Ticker</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: 600 }}>Shares</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: 600 }}>Avg Cost</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: 600 }}>Current Price</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: 600 }}>Current Value</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: 600 }}>Gain/Loss</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: '#1a1a1a' }}>Ticker</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 700, color: '#1a1a1a' }}>Shares</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 700, color: '#1a1a1a' }}>Avg Cost</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 700, color: '#1a1a1a' }}>Current Price</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 700, color: '#1a1a1a' }}>Value</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 700, color: '#1a1a1a' }}>Gain/Loss</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {portfolio?.holdings.map((holding) => (
-                          <TableRow key={holding.ticker} hover>
-                            <TableCell sx={{ fontWeight: 600 }}>
+                          <TableRow key={holding.ticker} hover sx={{ '&:hover': { backgroundColor: '#f8f9fa' } }}>
+                            <TableCell sx={{ fontWeight: 700, color: '#1a1a1a' }}>
                               {holding.ticker}
                             </TableCell>
                             <TableCell align="right">
@@ -178,14 +175,14 @@ export default function Dashboard() {
                             <TableCell align="right">
                               ${parseFloat(holding.currentPrice).toFixed(2)}
                             </TableCell>
-                            <TableCell align="right">
+                            <TableCell align="right" sx={{ fontWeight: 600 }}>
                               ${parseFloat(holding.currentValue).toFixed(2)}
                             </TableCell>
                             <TableCell
                               align="right"
                               sx={{
-                                color: holding.gainLoss >= 0 ? '#28a745' : '#dc3545',
-                                fontWeight: 600,
+                                color: holding.gainLoss >= 0 ? '#05a854' : '#d32f2f',
+                                fontWeight: 700,
                               }}
                             >
                               ${parseFloat(holding.gainLoss).toFixed(2)} ({parseFloat(holding.gainLossPercent).toFixed(2)}%)
@@ -198,20 +195,23 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
             ) : (
-              <Card sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-                <CardContent sx={{ textAlign: 'center', padding: 4 }}>
-                  <Typography variant="body1" sx={{ color: '#666', marginBottom: 2 }}>
-                    You don't have any holdings yet.
+              <Card elevation={0} sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.04)' }}>
+                <CardContent sx={{ textAlign: 'center', padding: 5 }}>
+                  <Typography variant="h6" sx={{ color: '#1a1a1a', marginBottom: 1 }}>
+                    Start Trading
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: '#666', marginBottom: 3 }}>
+                    You don't have any holdings yet. Search and buy your first stock.
                   </Typography>
                   <Button
                     variant="contained"
                     onClick={() => navigate('/trade')}
                     sx={{
-                      backgroundColor: '#667eea',
-                      '&:hover': { backgroundColor: '#764ba2' },
+                      backgroundColor: '#05a854',
+                      '&:hover': { backgroundColor: '#0d8f47' },
                     }}
                   >
-                    Start Trading
+                    Make Your First Trade
                   </Button>
                 </CardContent>
               </Card>

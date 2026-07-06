@@ -50,49 +50,47 @@ export default function Register() {
   };
 
   return (
-    <Container maxWidth="sm">
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '100vh',
-        }}
-      >
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #f8f9fa 0%, #f0f2f5 100%)',
+      }}
+    >
+      <Container maxWidth="sm">
         <Paper
-          elevation={3}
+          elevation={0}
           sx={{
-            padding: 4,
-            width: '100%',
-            borderRadius: 2,
+            padding: 5,
+            borderRadius: 3,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+            border: '1px solid rgba(0,0,0,0.04)',
           }}
         >
-          <Typography
-            variant="h4"
-            sx={{
-              color: '#667eea',
-              marginBottom: 0.5,
-              textAlign: 'center',
-              fontWeight: 600,
-            }}
-          >
-            Paper Trading
-          </Typography>
-          <Typography
-            variant="h5"
-            sx={{
-              marginBottom: 3,
-              textAlign: 'center',
-              color: '#666',
-            }}
-          >
-            Register
-          </Typography>
+          <Box sx={{ textAlign: 'center', marginBottom: 4 }}>
+            <Typography
+              variant="h4"
+              sx={{
+                background: 'linear-gradient(135deg, #05a854 0%, #0d8f47 100%)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                marginBottom: 1,
+              }}
+            >
+              Paper Trading
+            </Typography>
+            <Typography variant="body1" sx={{ color: '#666' }}>
+              Create your trading account
+            </Typography>
+          </Box>
 
           <form onSubmit={handleSubmit}>
             <TextField
               fullWidth
-              label="Email"
+              label="Email Address"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -100,6 +98,7 @@ export default function Register() {
               margin="normal"
               placeholder="your@email.com"
               disabled={loading}
+              variant="outlined"
             />
 
             <TextField
@@ -112,6 +111,7 @@ export default function Register() {
               margin="normal"
               placeholder="••••••••"
               disabled={loading}
+              variant="outlined"
             />
 
             <TextField
@@ -124,6 +124,7 @@ export default function Register() {
               margin="normal"
               placeholder="••••••••"
               disabled={loading}
+              variant="outlined"
             />
 
             {error && (
@@ -138,12 +139,11 @@ export default function Register() {
               variant="contained"
               sx={{
                 marginTop: 3,
-                padding: '12px',
+                padding: '12px 24px',
                 fontSize: '16px',
-                fontWeight: 500,
-                backgroundColor: '#667eea',
+                backgroundColor: '#05a854',
                 '&:hover': {
-                  backgroundColor: '#764ba2',
+                  backgroundColor: '#0d8f47',
                 },
               }}
               disabled={loading}
@@ -151,33 +151,28 @@ export default function Register() {
               {loading ? (
                 <CircularProgress size={24} sx={{ color: 'white' }} />
               ) : (
-                'Register'
+                'Create Account'
               )}
             </Button>
           </form>
 
-          <Typography
-            sx={{
-              marginTop: 3,
-              textAlign: 'center',
-              fontSize: '14px',
-              color: '#666',
-            }}
-          >
-            Already have an account?{' '}
-            <Link
-              to="/login"
-              style={{
-                color: '#667eea',
-                fontWeight: 500,
-                textDecoration: 'none',
-              }}
-            >
-              Login here
-            </Link>
-          </Typography>
+          <Box sx={{ marginTop: 3, textAlign: 'center' }}>
+            <Typography variant="body2" sx={{ color: '#666' }}>
+              Already have an account?{' '}
+              <Link
+                to="/login"
+                style={{
+                  color: '#05a854',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                }}
+              >
+                Login here
+              </Link>
+            </Typography>
+          </Box>
         </Paper>
-      </Box>
-    </Container>
+      </Container>
+    </Box>
   );
 }
