@@ -7,9 +7,14 @@ import {
   Typography,
   Alert,
   CircularProgress,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import LightModeIcon from '@mui/icons-material/LightMode';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import API from '../api/axios';
 
 export default function Register() {
@@ -20,6 +25,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -118,10 +124,28 @@ export default function Register() {
           justifyContent: 'center',
           alignItems: 'center',
           padding: 4,
-          backgroundColor: '#fff',
+          backgroundColor: 'background.default',
           overflowY: 'auto',
+          position: 'relative',
         }}
       >
+        <Tooltip title={isDark ? 'Light Mode' : 'Dark Mode'}>
+          <IconButton
+            onClick={toggleTheme}
+            sx={{
+              position: 'absolute',
+              top: 20,
+              right: 20,
+              color: 'text.primary',
+              '&:hover': {
+                backgroundColor: 'action.hover',
+              },
+            }}
+          >
+            {isDark ? <LightModeIcon /> : <DarkModeIcon />}
+          </IconButton>
+        </Tooltip>
+
         <Box sx={{ width: '100%', maxWidth: '380px' }}>
           <Typography variant="h5" sx={{ fontWeight: 700, marginBottom: 1 }}>
             Get started
