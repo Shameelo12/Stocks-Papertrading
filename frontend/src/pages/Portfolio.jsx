@@ -185,26 +185,28 @@ export default function Portfolio() {
                 Allocation Breakdown
               </Typography>
               {portfolio?.totalPortfolioValue > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={allocationData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={renderCustomLabel}
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {allocationData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
+                <Box sx={{ width: '100%', height: 350, display: 'flex', justifyContent: 'center' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={allocationData}
+                        cx="50%"
+                        cy="45%"
+                        labelLine={false}
+                        label={renderCustomLabel}
+                        outerRadius={100}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {allocationData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </Box>
               ) : (
                 <Box sx={{ textAlign: 'center', padding: 4 }}>
                   <Typography variant="body2" sx={{ color: 'text.secondary' }}>
@@ -224,26 +226,28 @@ export default function Portfolio() {
                 Holdings Breakdown
               </Typography>
               {holdingsData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={holdingsData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={renderCustomLabel}
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {holdingsData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
+                <Box sx={{ width: '100%', height: 350, display: 'flex', justifyContent: 'center' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={holdingsData}
+                        cx="50%"
+                        cy="45%"
+                        labelLine={false}
+                        label={renderCustomLabel}
+                        outerRadius={100}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {holdingsData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </Box>
               ) : (
                 <Box sx={{ textAlign: 'center', padding: 4 }}>
                   <Typography variant="body2" sx={{ color: 'text.secondary' }}>
