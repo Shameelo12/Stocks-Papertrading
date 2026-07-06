@@ -19,14 +19,14 @@ public class PortfolioService {
 
     private final HoldingRepository holdingRepository;
     private final TransactionRepository transactionRepository;
-    private final PolygonService polygonService;
+    private final AlphaVantageService alphaVantageService;
 
     public PortfolioService(HoldingRepository holdingRepository,
                            TransactionRepository transactionRepository,
-                           PolygonService polygonService) {
+                           AlphaVantageService alphaVantageService) {
         this.holdingRepository = holdingRepository;
         this.transactionRepository = transactionRepository;
-        this.polygonService = polygonService;
+        this.alphaVantageService = alphaVantageService;
     }
 
     public PortfolioResponse getPortfolio(User user) {
@@ -36,7 +36,7 @@ public class PortfolioService {
         BigDecimal portfolioValue = BigDecimal.ZERO;
         List<HoldingDTO> holdingDTOs = holdings.stream()
                 .map(holding -> {
-                    Optional<BigDecimal> priceOpt = polygonService.getCurrentPrice(holding.getTicker());
+                    Optional<BigDecimal> priceOpt = alphaVantageService.getCurrentPrice(holding.getTicker());
                     BigDecimal price = priceOpt.orElse(holding.getAvgCostPerShare());
                     return new HoldingDTO(holding.getTicker(), holding.getShares(),
                             holding.getAvgCostPerShare(), price);

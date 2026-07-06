@@ -2,7 +2,7 @@ package com.papertrading.controller;
 
 import com.papertrading.dto.StockPriceResponse;
 import com.papertrading.dto.StockSuggestion;
-import com.papertrading.service.PolygonService;
+import com.papertrading.service.AlphaVantageService;
 import com.papertrading.service.StockSearchService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,17 +14,17 @@ import java.util.List;
 @RequestMapping("/api/stocks")
 public class StockController {
 
-    private final PolygonService polygonService;
+    private final AlphaVantageService alphaVantageService;
     private final StockSearchService stockSearchService;
 
-    public StockController(PolygonService polygonService, StockSearchService stockSearchService) {
-        this.polygonService = polygonService;
+    public StockController(AlphaVantageService alphaVantageService, StockSearchService stockSearchService) {
+        this.alphaVantageService = alphaVantageService;
         this.stockSearchService = stockSearchService;
     }
 
     @GetMapping("/{ticker}/price")
     public ResponseEntity<StockPriceResponse> getPrice(@PathVariable String ticker) {
-        var price = polygonService.getCurrentPrice(ticker);
+        var price = alphaVantageService.getCurrentPrice(ticker);
 
         if (price.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();

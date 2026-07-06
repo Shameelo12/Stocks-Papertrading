@@ -7,7 +7,6 @@ com/papertrading/config/JwtAuthenticationFilter.class
 com/papertrading/controller/StockController.class
 com/papertrading/controller/PortfolioController.class
 com/papertrading/repository/HoldingRepository.class
-com/papertrading/service/PolygonService.class
 com/papertrading/dto/HoldingDTO.class
 com/papertrading/model/Transaction$Type.class
 com/papertrading/controller/AuthController.class
@@ -32,3 +31,4 @@ com/papertrading/config/JwtUtil.class
 com/papertrading/dto/TransactionDTO.class
 com/papertrading/config/JwtAuthenticationProvider.class
 com/papertrading/model/Holding.class
+com/papertrading/service/AlphaVantageService.class

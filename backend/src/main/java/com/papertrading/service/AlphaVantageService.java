@@ -12,19 +12,19 @@ import java.math.BigDecimal;
 import java.util.Optional;
 
 @Service
-public class PolygonService {
-    private static final Logger logger = LoggerFactory.getLogger(PolygonService.class);
+public class AlphaVantageService {
+    private static final Logger logger = LoggerFactory.getLogger(AlphaVantageService.class);
 
-    @Value("${polygon.api.key}")
+    @Value("${alpha.vantage.api.key}")
     private String apiKey;
 
-    @Value("${polygon.api.url}")
+    @Value("${alpha.vantage.api.url}")
     private String apiUrl;
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
-    public PolygonService(RestTemplate restTemplate, ObjectMapper objectMapper) {
+    public AlphaVantageService(RestTemplate restTemplate, ObjectMapper objectMapper) {
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
     }
@@ -32,7 +32,7 @@ public class PolygonService {
     public Optional<BigDecimal> getCurrentPrice(String ticker) {
         try {
             String url = String.format(
-                    "%s/v3/quotes/%s?apikey=%s",
+                    "%s?function=GLOBAL_QUOTE&symbol=%s&apikey=%s",
                     apiUrl,
                     ticker.toUpperCase(),
                     apiKey
@@ -41,10 +41,10 @@ public class PolygonService {
             String response = restTemplate.getForObject(url, String.class);
             JsonNode root = objectMapper.readTree(response);
 
-            if (root.has("results") && root.get("results").isArray() && root.get("results").size() > 0) {
-                JsonNode result = root.get("results").get(0);
-                if (result.has("last_quote") && result.get("last_quote").has("ask")) {
-                    BigDecimal price = new BigDecimal(result.get("last_quote").get("ask").asText());
+            if (root.has("Global Quote")) {
+                JsonNode quote = root.get("Global Quote");
+                if (quote.has("05. price") && !quote.get("05. price").asText().isEmpty()) {
+                    BigDecimal price = new BigDecimal(quote.get("05. price").asText());
                     logger.info("Fetched price for {}: {}", ticker, price);
                     return Optional.of(price);
                 }
