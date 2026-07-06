@@ -91,24 +91,42 @@ export default function Register() {
           },
         }}
       >
-        <Box sx={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: '400px' }}>
-          <Box sx={{ display: 'flex', justifyContent: 'center', marginBottom: 3 }}>
-            <TrendingUpIcon sx={{ fontSize: 60, color: 'white' }} />
+        <Box sx={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: '450px' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}>
+            <TrendingUpIcon sx={{ fontSize: 80, color: 'white' }} />
           </Box>
-          <Typography variant="h3" sx={{ fontWeight: 800, marginBottom: 2 }}>
+          <Typography
+            variant="h2"
+            sx={{
+              fontWeight: 900,
+              marginBottom: 3,
+              fontSize: { xs: '2.5rem', sm: '3rem', md: '3.5rem' },
+              letterSpacing: '-0.02em',
+              lineHeight: 1.2,
+            }}
+          >
             Paper Trading
           </Typography>
-          <Typography variant="h6" sx={{ fontWeight: 300, marginBottom: 3, lineHeight: 1.6 }}>
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 300,
+              marginBottom: 4,
+              lineHeight: 1.8,
+              fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem' },
+              opacity: 0.95,
+            }}
+          >
             Learn to invest with $10,000 in virtual cash. Build your trading skills risk-free.
           </Typography>
-          <Box sx={{ marginTop: 4, paddingTop: 3, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
-            <Typography variant="body2" sx={{ marginBottom: 2 }}>
+          <Box sx={{ marginTop: 5, paddingTop: 3, borderTop: '1px solid rgba(255,255,255,0.3)' }}>
+            <Typography variant="body1" sx={{ marginBottom: 2, fontWeight: 500, fontSize: '1.05rem' }}>
               ✓ Real-time stock data
             </Typography>
-            <Typography variant="body2" sx={{ marginBottom: 2 }}>
+            <Typography variant="body1" sx={{ marginBottom: 2, fontWeight: 500, fontSize: '1.05rem' }}>
               ✓ Portfolio tracking
             </Typography>
-            <Typography variant="body2">
+            <Typography variant="body1" sx={{ fontWeight: 500, fontSize: '1.05rem' }}>
               ✓ Advanced analytics
             </Typography>
           </Box>
@@ -147,10 +165,26 @@ export default function Register() {
         </Tooltip>
 
         <Box sx={{ width: '100%', maxWidth: '380px' }}>
-          <Typography variant="h5" sx={{ fontWeight: 700, marginBottom: 1 }}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 800,
+              marginBottom: 1,
+              fontSize: { xs: '1.75rem', sm: '2rem', md: '2.2rem' },
+              letterSpacing: '-0.01em',
+            }}
+          >
             Get started
           </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary', marginBottom: 4 }}>
+          <Typography
+            variant="body1"
+            sx={{
+              color: 'text.secondary',
+              marginBottom: 4,
+              fontSize: '0.95rem',
+              lineHeight: 1.6,
+            }}
+          >
             Create your account to begin paper trading today
           </Typography>
 
