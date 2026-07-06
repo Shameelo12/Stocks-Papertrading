@@ -1,13 +1,18 @@
 com/papertrading/config/RestTemplateConfig.class
+com/papertrading/repository/PriceAlertRepository.class
 com/papertrading/dto/PortfolioResponse.class
+com/papertrading/dto/CreatePriceAlertRequest.class
 com/papertrading/dto/StockSuggestion.class
 com/papertrading/service/PortfolioService.class
 com/papertrading/dto/LoginRequest.class
+com/papertrading/dto/PriceAlertDTO.class
 com/papertrading/config/JwtAuthenticationFilter.class
 com/papertrading/controller/StockController.class
 com/papertrading/dto/PortfolioHistoryDTO.class
 com/papertrading/controller/PortfolioController.class
+com/papertrading/model/PriceAlert.class
 com/papertrading/repository/HoldingRepository.class
+com/papertrading/model/PriceAlert$AlertType.class
 com/papertrading/dto/HoldingDTO.class
 com/papertrading/model/Transaction$Type.class
 com/papertrading/controller/AuthController.class
@@ -23,6 +28,7 @@ com/papertrading/repository/TransactionRepository.class
 com/papertrading/controller/GlobalExceptionHandler.class
 com/papertrading/model/Transaction.class
 com/papertrading/repository/UserRepository.class
+com/papertrading/service/PriceAlertService.class
 com/papertrading/dto/AuthResponse.class
 com/papertrading/service/TradeService.class
 com/papertrading/dto/RegisterRequest.class
@@ -34,3 +40,4 @@ com/papertrading/dto/TradeResponse.class
 com/papertrading/config/JwtAuthenticationProvider.class
 com/papertrading/model/Holding.class
 com/papertrading/service/AlphaVantageService.class
+com/papertrading/controller/PriceAlertController.class
