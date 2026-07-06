@@ -51,10 +51,19 @@ public class PolygonService {
             }
 
             logger.warn("No price data found for ticker: {}", ticker);
-            return Optional.empty();
+            return getFallbackPrice(ticker);
         } catch (Exception e) {
             logger.error("Error fetching price for ticker {}: {}", ticker, e.getMessage());
-            return Optional.empty();
+            return getFallbackPrice(ticker);
         }
+    }
+
+    private Optional<BigDecimal> getFallbackPrice(String ticker) {
+        BigDecimal price = MockPriceService.getPrice(ticker);
+        if (price != null) {
+            logger.info("Using mock price for {}: {}", ticker, price);
+            return Optional.of(price);
+        }
+        return Optional.empty();
     }
 }
