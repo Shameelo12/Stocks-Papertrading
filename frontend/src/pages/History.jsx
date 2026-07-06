@@ -13,6 +13,8 @@ import {
   Paper,
   CircularProgress,
   Box,
+  Alert,
+  Chip,
 } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 import API from '../api/axios';
@@ -41,85 +43,94 @@ export default function History() {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: '#f8f9fa', paddingTop: 4, paddingBottom: 4 }}>
-      <Container maxWidth="lg">
-        <Typography variant="h4" sx={{ marginBottom: 4, fontWeight: 700, color: '#1a1a1a' }}>
+    <Container maxWidth="lg" sx={{ paddingY: 4 }}>
+      {/* Header */}
+      <Box sx={{ marginBottom: 4 }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, marginBottom: 1 }}>
           Transaction History
         </Typography>
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          View all your trades and transactions
+        </Typography>
+      </Box>
 
-        {error && (
-          <Alert severity="error" sx={{ marginBottom: 2 }}>
-            {error}
-          </Alert>
-        )}
+      {error && (
+        <Alert severity="error" sx={{ marginBottom: 3 }}>
+          {error}
+        </Alert>
+      )}
 
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', padding: 4 }}>
-            <CircularProgress sx={{ color: '#05a854' }} />
-          </Box>
-        ) : transactions.length === 0 ? (
-          <Card elevation={0} sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.04)' }}>
-            <CardContent sx={{ textAlign: 'center', padding: 5 }}>
-              <Typography variant="h6" sx={{ color: '#1a1a1a', marginBottom: 1 }}>
-                No Transactions Yet
-              </Typography>
-              <Typography variant="body1" sx={{ color: '#666' }}>
-                Start trading to see your transaction history here.
-              </Typography>
-            </CardContent>
-          </Card>
-        ) : (
-          <TableContainer component={Paper} elevation={0} sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.04)' }}>
-            <Table>
-              <TableHead sx={{ backgroundColor: '#f8f9fa', borderBottom: '2px solid rgba(0,0,0,0.04)' }}>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 700, color: '#1a1a1a' }}>Date & Time</TableCell>
-                  <TableCell sx={{ fontWeight: 700, color: '#1a1a1a' }}>Ticker</TableCell>
-                  <TableCell sx={{ fontWeight: 700, color: '#1a1a1a' }}>Type</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700, color: '#1a1a1a' }}>Shares</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700, color: '#1a1a1a' }}>Price</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700, color: '#1a1a1a' }}>Total Value</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {transactions.map((tx) => (
-                  <TableRow key={tx.id} hover sx={{ '&:hover': { backgroundColor: '#f8f9fa' } }}>
-                    <TableCell>
-                      {new Date(tx.timestamp).toLocaleString()}
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: '#1a1a1a' }}>
-                      {tx.ticker}
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        style={{
-                          padding: '6px 12px',
-                          borderRadius: '6px',
-                          backgroundColor: tx.type === 'BUY' ? '#d4edda' : '#f8d7da',
-                          color: tx.type === 'BUY' ? '#155724' : '#721c24',
-                          fontWeight: 600,
-                          fontSize: '13px',
-                        }}
-                      >
-                        {tx.type}
-                      </span>
-                    </TableCell>
-                    <TableCell align="right">
-                      {parseFloat(tx.shares).toFixed(2)}
-                    </TableCell>
-                    <TableCell align="right">
-                      ${parseFloat(tx.priceAtTime).toFixed(2)}
-                    </TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 600, color: '#1a1a1a' }}>
-                      ${parseFloat(tx.totalValue).toFixed(2)}
-                    </TableCell>
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+          <CircularProgress sx={{ color: '#05a854' }} />
+        </Box>
+      ) : transactions.length === 0 ? (
+        <Card elevation={0}>
+          <CardContent sx={{ textAlign: 'center', paddingY: 6 }}>
+            <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+              No transactions yet. Start trading to see your history here!
+            </Typography>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card elevation={0}>
+          <CardContent sx={{ padding: 0 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, padding: 3, marginBottom: 0 }}>
+              Transactions ({transactions.length})
+            </Typography>
+            <TableContainer>
+              <Table>
+                <TableHead sx={{ backgroundColor: 'rgba(0,0,0,0.03)' }}>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 700 }}>Date & Time</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Ticker</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Type</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700 }}>Shares</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700 }}>Price</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700 }}>Total Value</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </Container>
-    </Box>
+                </TableHead>
+                <TableBody>
+                  {transactions.map((tx) => (
+                    <TableRow key={tx.id} hover>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {new Date(tx.timestamp).toLocaleString()}
+                        </Typography>
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>
+                        {tx.ticker}
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={tx.type}
+                          size="small"
+                          variant="outlined"
+                          sx={{
+                            backgroundColor: tx.type === 'BUY' ? 'rgba(5, 168, 84, 0.1)' : 'rgba(211, 47, 47, 0.1)',
+                            borderColor: tx.type === 'BUY' ? '#05a854' : '#d32f2f',
+                            color: tx.type === 'BUY' ? '#05a854' : '#d32f2f',
+                            fontWeight: 700,
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell align="right">
+                        {parseFloat(tx.shares).toFixed(2)}
+                      </TableCell>
+                      <TableCell align="right">
+                        ${parseFloat(tx.priceAtTime).toFixed(2)}
+                      </TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 600 }}>
+                        ${parseFloat(tx.totalValue).toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </CardContent>
+        </Card>
+      )}
+    </Container>
   );
 }
