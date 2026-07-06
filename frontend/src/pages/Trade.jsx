@@ -112,8 +112,8 @@ export default function Trade() {
   const canAfford = totalCost <= user?.balance;
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: '#f8f9fa', paddingTop: 4, paddingBottom: 6, display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ width: '100%', paddingX: 4, paddingTop: 2 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <Box sx={{ flex: 1, width: '100%', paddingX: 2, paddingY: 4 }}>
         <Box sx={{ textAlign: 'center', marginBottom: 5, maxWidth: '1200px', marginX: 'auto', width: '100%' }}>
           <Typography variant="h3" sx={{ fontWeight: 700, color: '#1a1a1a', marginBottom: 1 }}>
             Trade Stocks
