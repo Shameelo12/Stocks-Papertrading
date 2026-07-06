@@ -10,6 +10,7 @@ import Portfolio from './pages/Portfolio';
 import Watchlist from './pages/Watchlist';
 import History from './pages/History';
 import Settings from './pages/Settings';
+import Analytics from './pages/Analytics';
 
 function App() {
   return (
@@ -63,6 +64,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Settings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/analytics"
+            element={
+              <ProtectedRoute>
+                <Analytics />
               </ProtectedRoute>
             }
           />

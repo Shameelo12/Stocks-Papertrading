@@ -17,6 +17,7 @@ import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import StarIcon from '@mui/icons-material/Star';
 import HistoryIcon from '@mui/icons-material/History';
 import SettingsIcon from '@mui/icons-material/Settings';
+import AnalyticsIcon from '@mui/icons-material/Analytics';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const DRAWER_WIDTH = 280;
@@ -29,6 +30,7 @@ const menuItems = [
 ];
 
 const otherItems = [
+  { label: 'Analytics', icon: AnalyticsIcon, path: '/analytics' },
   { label: 'History', icon: HistoryIcon, path: '/history' },
   { label: 'Settings', icon: SettingsIcon, path: '/settings' },
 ];

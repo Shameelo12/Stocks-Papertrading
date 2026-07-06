@@ -4,6 +4,7 @@
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/config/JwtUtil.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/config/RestTemplateConfig.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/config/SecurityConfig.java
+/Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/controller/AnalyticsController.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/controller/AuthController.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/controller/GlobalExceptionHandler.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/controller/HealthController.java
@@ -19,10 +20,12 @@
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/dto/PortfolioResponse.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/dto/PriceAlertDTO.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/dto/RegisterRequest.java
+/Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/dto/StockPerformanceDTO.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/dto/StockPriceResponse.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/dto/StockSuggestion.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/dto/TradeRequest.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/dto/TradeResponse.java
+/Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/dto/TradeStatsDTO.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/dto/TransactionDTO.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/model/Holding.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/model/PriceAlert.java
@@ -33,6 +36,7 @@
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/repository/TransactionRepository.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/repository/UserRepository.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/service/AlphaVantageService.java
+/Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/service/AnalyticsService.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/service/AuthService.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/service/MockPriceService.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/service/PortfolioService.java
