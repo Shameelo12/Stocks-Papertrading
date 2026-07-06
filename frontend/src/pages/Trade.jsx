@@ -14,13 +14,17 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
+  Chip,
+  LinearProgress,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { useAuth } from '../context/AuthContext';
+import { usePortfolio } from '../hooks/usePortfolio';
 import API from '../api/axios';
 
 export default function Trade() {
   const { user } = useAuth();
+  const { portfolio, refetch: refetchPortfolio } = usePortfolio(false); // No auto-refresh, manual refresh after trade
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -80,9 +84,31 @@ export default function Trade() {
   };
 
   const handleTrade = async () => {
-    if (!stockPrice || !shares || shares <= 0) {
+    if (!stockPrice || !shares || parseFloat(shares) <= 0) {
       setError('Please enter a valid number of shares');
       return;
+    }
+
+    const sharesNum = parseFloat(shares);
+    const totalCost = sharesNum * parseFloat(stockPrice.price);
+
+    // Validation logic
+    if (tradeType === 'buy') {
+      if (totalCost > portfolio?.currentBalance) {
+        setError(`Insufficient buying power. Required: $${totalCost.toFixed(2)}, Available: $${portfolio?.currentBalance?.toFixed(2)}`);
+        return;
+      }
+    } else {
+      // For sell
+      const holding = portfolio?.holdings?.find(h => h.ticker === stockPrice.ticker);
+      if (!holding) {
+        setError(`You don't own any shares of ${stockPrice.ticker}`);
+        return;
+      }
+      if (sharesNum > parseFloat(holding.shares)) {
+        setError(`You only own ${parseFloat(holding.shares).toFixed(2)} shares of ${stockPrice.ticker}`);
+        return;
+      }
     }
 
     setLoading(true);
@@ -93,14 +119,17 @@ export default function Trade() {
       const endpoint = tradeType === 'buy' ? '/trade/buy' : '/trade/sell';
       const response = await API.post(endpoint, {
         ticker: stockPrice.ticker,
-        shares: parseFloat(shares),
+        shares: sharesNum,
       });
+
+      // Refetch portfolio to update all values
+      await refetchPortfolio();
 
       setSuccess(`${tradeType.toUpperCase()} successful! New balance: $${response.data.balance.toFixed(2)}`);
       setShares('');
       setStockPrice(null);
       setSearchQuery('');
-      setTimeout(() => setSuccess(''), 3000);
+      setTimeout(() => setSuccess(''), 4000);
     } catch (err) {
       setError(err.response?.data?.error || `${tradeType} failed. Please try again.`);
     } finally {
@@ -108,8 +137,14 @@ export default function Trade() {
     }
   };
 
-  const totalCost = stockPrice ? (parseFloat(shares) || 0) * parseFloat(stockPrice.price) : 0;
-  const canAfford = totalCost <= user?.balance;
+  const totalCost = stockPrice && shares ? (parseFloat(shares) || 0) * parseFloat(stockPrice.price) : 0;
+  const currentBalance = portfolio?.currentBalance || user?.balance || 0;
+  const canAfford = totalCost <= currentBalance;
+  const buyingPower = currentBalance;
+
+  // For sell, check if user owns enough shares
+  const userHolding = stockPrice ? portfolio?.holdings?.find(h => h.ticker === stockPrice.ticker) : null;
+  const canSell = userHolding && parseFloat(shares) <= parseFloat(userHolding.shares);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -353,17 +388,62 @@ export default function Trade() {
             }}
           >
             <CardContent sx={{ padding: 4 }}>
-              <Box sx={{ backgroundColor: '#f8f9fa', padding: 3, borderRadius: '12px', marginBottom: 3 }}>
+              <Box sx={{ backgroundColor: 'rgba(0,0,0,0.02)', padding: 3, borderRadius: '12px', marginBottom: 3, border: '1px solid rgba(0,0,0,0.08)' }}>
+                <Box sx={{ marginBottom: 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', marginBottom: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      {tradeType === 'buy' ? 'Buying Power' : 'Holdings'}
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#05a854' }}>
+                      ${tradeType === 'buy' ? buyingPower.toFixed(2) : (userHolding ? parseFloat(userHolding.shares).toFixed(2) : '0.00')}
+                    </Typography>
+                  </Box>
+                  <LinearProgress
+                    variant="determinate"
+                    value={
+                      tradeType === 'buy'
+                        ? Math.min(100, (totalCost / buyingPower) * 100 || 0)
+                        : Math.min(100, (parseFloat(shares || 0) / parseFloat(userHolding?.shares || 1)) * 100 || 0)
+                    }
+                    sx={{
+                      height: 8,
+                      borderRadius: '4px',
+                      backgroundColor: 'rgba(0,0,0,0.1)',
+                      '& .MuiLinearProgress-bar': {
+                        backgroundColor: totalCost > buyingPower && tradeType === 'buy' ? '#d32f2f' : '#05a854',
+                      },
+                    }}
+                  />
+                </Box>
+
                 <Typography variant="body1" sx={{ marginBottom: 2, fontSize: '16px' }}>
-                  <strong>Total {tradeType === 'buy' ? 'Cost' : 'Value'}:</strong> ${totalCost.toFixed(2)}
+                  <strong>Total {tradeType === 'buy' ? 'Cost' : 'Value'}:</strong> <span style={{ color: '#05a854', fontWeight: 700 }}>${totalCost.toFixed(2)}</span>
                 </Typography>
-                <Typography variant="body1" sx={{ marginBottom: 1, fontSize: '16px', color: canAfford || tradeType === 'sell' ? '#666' : '#d32f2f' }}>
-                  <strong>Available Balance:</strong> ${user?.balance.toFixed(2)}
-                </Typography>
-                {tradeType === 'buy' && !canAfford && (
-                  <Typography variant="body2" sx={{ color: '#d32f2f', fontWeight: 600, marginTop: 1 }}>
-                    ⚠️ Insufficient balance for this trade
-                  </Typography>
+
+                {tradeType === 'buy' && (
+                  <>
+                    <Typography variant="body2" sx={{ marginBottom: 1, color: canAfford ? 'text.secondary' : '#d32f2f', fontWeight: canAfford ? 400 : 600 }}>
+                      Available Cash: <strong>${buyingPower.toFixed(2)}</strong>
+                    </Typography>
+                    {!canAfford && (
+                      <Alert severity="error" sx={{ marginTop: 1 }}>
+                        Insufficient buying power. You need ${(totalCost - buyingPower).toFixed(2)} more.
+                      </Alert>
+                    )}
+                  </>
+                )}
+
+                {tradeType === 'sell' && (
+                  <>
+                    <Typography variant="body2" sx={{ marginBottom: 1, color: 'text.secondary' }}>
+                      You own: <strong>{userHolding ? parseFloat(userHolding.shares).toFixed(2) : '0.00'}</strong> shares
+                    </Typography>
+                    {!canSell && userHolding && (
+                      <Alert severity="error" sx={{ marginTop: 1 }}>
+                        You can only sell {parseFloat(userHolding.shares).toFixed(2)} shares.
+                      </Alert>
+                    )}
+                  </>
                 )}
               </Box>
 
@@ -374,7 +454,7 @@ export default function Trade() {
                 fullWidth
                 variant="contained"
                 onClick={handleTrade}
-                disabled={loading || !shares || (tradeType === 'buy' && !canAfford)}
+                disabled={loading || !shares || parseFloat(shares) <= 0 || (tradeType === 'buy' && !canAfford) || (tradeType === 'sell' && !canSell)}
                 sx={{
                   backgroundColor: tradeType === 'buy' ? '#05a854' : '#d32f2f',
                   padding: '16px',
@@ -382,13 +462,14 @@ export default function Trade() {
                   fontWeight: 700,
                   borderRadius: '10px',
                   boxShadow: tradeType === 'buy' ? '0 6px 16px rgba(5, 168, 84, 0.25)' : '0 6px 16px rgba(211, 47, 47, 0.25)',
-                  '&:hover': {
+                  '&:hover:not(:disabled)': {
                     backgroundColor: tradeType === 'buy' ? '#0d8f47' : '#b71c1c',
                     boxShadow: tradeType === 'buy' ? '0 8px 20px rgba(5, 168, 84, 0.35)' : '0 8px 20px rgba(211, 47, 47, 0.35)',
                     transform: 'translateY(-2px)',
                   },
                   '&:disabled': {
                     opacity: 0.5,
+                    cursor: 'not-allowed',
                   },
                   transition: 'all 0.2s ease',
                 }}

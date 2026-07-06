@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   Container,
   Box,
@@ -16,33 +16,16 @@ import {
   Paper,
   Chip,
   LinearProgress,
-  Alert,
 } from '@mui/material';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
-import { useAuth } from '../context/AuthContext';
-import API from '../api/axios';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { usePortfolio } from '../hooks/usePortfolio';
+
+const COLORS = ['#05a854', '#1f3a5f', '#ff6b35', '#f7931e', '#2196f3', '#9c27b0', '#e91e63', '#009688'];
 
 export default function Portfolio() {
-  const { user } = useAuth();
-  const [portfolio, setPortfolio] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    fetchPortfolio();
-  }, []);
-
-  const fetchPortfolio = async () => {
-    try {
-      const response = await API.get('/portfolio');
-      setPortfolio(response.data);
-    } catch (err) {
-      setError('Failed to load portfolio');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { portfolio, loading, error, lastUpdated } = usePortfolio(5000); // Auto-refresh every 5 seconds
 
   if (loading) {
     return (
@@ -52,133 +35,205 @@ export default function Portfolio() {
     );
   }
 
-  const metrics = [
-    {
-      label: 'Portfolio Value',
-      value: `$${portfolio?.totalPortfolioValue.toFixed(2) || '0.00'}`,
-      icon: TrendingUpIcon,
-      bg: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
-    },
-    {
-      label: 'Total Gain/Loss',
-      value: `$${portfolio?.totalGainLoss.toFixed(2) || '0.00'}`,
-      icon: portfolio?.totalGainLoss >= 0 ? TrendingUpIcon : TrendingDownIcon,
-      bg: portfolio?.totalGainLoss >= 0 ? 'linear-gradient(135deg, #05a854 0%, #0d8f47 100%)' : 'linear-gradient(135deg, #d32f2f 0%, #c62828 100%)',
-      color: portfolio?.totalGainLoss >= 0 ? '#05a854' : '#d32f2f',
-    },
-    {
-      label: 'Return %',
-      value: `${portfolio?.totalGainLossPercent.toFixed(2) || '0.00'}%`,
-      icon: portfolio?.totalGainLossPercent >= 0 ? TrendingUpIcon : TrendingDownIcon,
-      color: portfolio?.totalGainLossPercent >= 0 ? '#05a854' : '#d32f2f',
-    },
+  // Allocation data (Cash vs Invested)
+  const allocationData = [
+    { name: 'Cash', value: portfolio?.currentBalance || 0, color: '#1f3a5f' },
+    { name: 'Invested', value: portfolio?.investedBalance || 0, color: '#05a854' },
   ];
+
+  // Holdings breakdown data
+  const holdingsData = (portfolio?.holdings || []).map((h, idx) => ({
+    name: h.ticker,
+    value: parseFloat(h.currentValue),
+    color: COLORS[idx % COLORS.length],
+    ...h,
+  }));
+
+  const renderCustomLabel = (entry) => {
+    const percent = ((entry.value / (portfolio?.totalPortfolioValue || 1)) * 100).toFixed(1);
+    return `${percent}%`;
+  };
+
+  const CustomTooltip = ({ active, payload }) => {
+    if (active && payload && payload[0]) {
+      const data = payload[0].payload;
+      return (
+        <Box
+          sx={{
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            color: 'white',
+            padding: '8px 12px',
+            borderRadius: '4px',
+            fontSize: '12px',
+            fontWeight: 600,
+          }}
+        >
+          <Typography variant="caption" sx={{ color: 'white', display: 'block' }}>
+            {data.name}
+          </Typography>
+          <Typography variant="caption" sx={{ color: 'white', display: 'block' }}>
+            ${parseFloat(payload[0].value).toFixed(2)}
+          </Typography>
+          <Typography variant="caption" sx={{ color: 'white', display: 'block' }}>
+            {((payload[0].value / (portfolio?.totalPortfolioValue || 1)) * 100).toFixed(1)}%
+          </Typography>
+        </Box>
+      );
+    }
+    return null;
+  };
 
   return (
     <Container maxWidth="lg" sx={{ paddingY: 4 }}>
       {/* Header */}
       <Box sx={{ marginBottom: 4 }}>
         <Typography variant="h4" sx={{ fontWeight: 700, marginBottom: 1 }}>
-          Portfolio
+          Portfolio Analysis
         </Typography>
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          View your holdings and performance
+          Your holdings and allocation breakdown
+          {lastUpdated && (
+            <Chip
+              label={`Updated: ${lastUpdated.toLocaleTimeString()}`}
+              size="small"
+              variant="outlined"
+              sx={{ marginLeft: 2 }}
+            />
+          )}
         </Typography>
       </Box>
 
-      {error && <Alert severity="error" sx={{ marginBottom: 3 }}>{error}</Alert>}
-
       {/* Key Metrics */}
       <Grid container spacing={3} sx={{ marginBottom: 4 }}>
-        {metrics.map((metric, idx) => (
+        {[
+          {
+            label: 'Portfolio Value',
+            value: `$${portfolio?.totalPortfolioValue.toFixed(2) || '0.00'}`,
+            icon: '💼',
+            bg: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
+          },
+          {
+            label: 'Total Return',
+            value: `${portfolio?.totalGainLossPercent.toFixed(2) || '0.00'}%`,
+            icon: portfolio?.totalGainLoss >= 0 ? '📈' : '📉',
+            bg: portfolio?.totalGainLoss >= 0 ? 'linear-gradient(135deg, #05a854 0%, #0d8f47 100%)' : 'linear-gradient(135deg, #d32f2f 0%, #c62828 100%)',
+          },
+          {
+            label: 'Gain/Loss',
+            value: `$${portfolio?.totalGainLoss.toFixed(2) || '0.00'}`,
+            icon: '💰',
+            bg: 'linear-gradient(135deg, #1f3a5f 0%, #2a5298 100%)',
+          },
+        ].map((metric, idx) => (
           <Grid item xs={12} sm={6} md={4} key={idx}>
-            <Card elevation={0} sx={{ height: '100%', overflow: 'hidden' }}>
-              <Box
-                sx={{
-                  background: metric.bg,
-                  color: 'white',
-                  padding: 2,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <Box>
-                  <Typography variant="body2" sx={{ opacity: 0.9, marginBottom: 1 }}>
-                    {metric.label}
-                  </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                    {metric.value}
+            <Card elevation={0} sx={{ background: metric.bg, color: 'white', borderRadius: '16px', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', transition: 'all 0.3s ease', '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 12px 32px rgba(0,0,0,0.2)' } }}>
+              <CardContent sx={{ padding: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                  <Box>
+                    <Typography variant="body2" sx={{ opacity: 0.85, marginBottom: 1, fontWeight: 500 }}>
+                      {metric.label}
+                    </Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                      {metric.value}
+                    </Typography>
+                  </Box>
+                  <Typography sx={{ fontSize: '2rem' }}>
+                    {metric.icon}
                   </Typography>
                 </Box>
-                {metric.icon && <metric.icon sx={{ fontSize: 40, opacity: 0.3 }} />}
-              </Box>
+              </CardContent>
             </Card>
           </Grid>
         ))}
       </Grid>
 
-      {/* Allocation Breakdown */}
-      <Card elevation={0} sx={{ marginBottom: 4 }}>
-        <CardContent>
-          <Typography variant="h6" sx={{ fontWeight: 700, marginBottom: 3 }}>
-            Allocation
-          </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', marginBottom: 1 }}>
-                  <Typography variant="body2">Cash</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                    ${portfolio?.currentBalance.toFixed(2) || '0.00'}
+      {/* Charts Section */}
+      <Grid container spacing={3} sx={{ marginBottom: 4 }}>
+        {/* Allocation Pie Chart */}
+        <Grid item xs={12} md={6}>
+          <Card elevation={0}>
+            <CardContent>
+              <Typography variant="h6" sx={{ fontWeight: 700, marginBottom: 3 }}>
+                Allocation Breakdown
+              </Typography>
+              {portfolio?.totalPortfolioValue > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={allocationData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={renderCustomLabel}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {allocationData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <Box sx={{ textAlign: 'center', padding: 4 }}>
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    No holdings yet
                   </Typography>
                 </Box>
-                <LinearProgress
-                  variant="determinate"
-                  value={(portfolio?.currentBalance / portfolio?.totalPortfolioValue) * 100 || 0}
-                  sx={{
-                    height: 8,
-                    borderRadius: '4px',
-                    backgroundColor: 'rgba(0,0,0,0.1)',
-                    '& .MuiLinearProgress-bar': {
-                      backgroundColor: '#1f3a5f',
-                    },
-                  }}
-                />
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', marginBottom: 1 }}>
-                  <Typography variant="body2">Invested</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                    ${portfolio?.investedBalance.toFixed(2) || '0.00'}
-                  </Typography>
-                </Box>
-                <LinearProgress
-                  variant="determinate"
-                  value={(portfolio?.investedBalance / portfolio?.totalPortfolioValue) * 100 || 0}
-                  sx={{
-                    height: 8,
-                    borderRadius: '4px',
-                    backgroundColor: 'rgba(0,0,0,0.1)',
-                    '& .MuiLinearProgress-bar': {
-                      backgroundColor: '#05a854',
-                    },
-                  }}
-                />
-              </Box>
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
 
-      {/* Holdings Table */}
-      {portfolio?.holdings && portfolio.holdings.length > 0 ? (
+        {/* Holdings Pie Chart */}
+        <Grid item xs={12} md={6}>
+          <Card elevation={0}>
+            <CardContent>
+              <Typography variant="h6" sx={{ fontWeight: 700, marginBottom: 3 }}>
+                Holdings Breakdown
+              </Typography>
+              {holdingsData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={holdingsData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={renderCustomLabel}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {holdingsData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <Box sx={{ textAlign: 'center', padding: 4 }}>
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    No stocks in portfolio
+                  </Typography>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Detailed Holdings Table */}
+      {holdingsData.length > 0 && (
         <Card elevation={0}>
           <CardContent sx={{ padding: 0 }}>
             <Typography variant="h6" sx={{ fontWeight: 700, padding: 3, marginBottom: 0 }}>
-              Holdings ({portfolio.holdings.length})
+              Holdings Details
             </Typography>
             <TableContainer>
               <Table>
@@ -189,12 +244,12 @@ export default function Portfolio() {
                     <TableCell align="right" sx={{ fontWeight: 700 }}>Avg Cost</TableCell>
                     <TableCell align="right" sx={{ fontWeight: 700 }}>Current Price</TableCell>
                     <TableCell align="right" sx={{ fontWeight: 700 }}>Value</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700 }}>% of Portfolio</TableCell>
                     <TableCell align="right" sx={{ fontWeight: 700 }}>P&L</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 700 }}>%</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {portfolio.holdings.map((holding) => (
+                  {holdingsData.map((holding) => (
                     <TableRow key={holding.ticker} hover>
                       <TableCell sx={{ fontWeight: 700 }}>
                         <Chip
@@ -203,8 +258,8 @@ export default function Portfolio() {
                           size="small"
                           sx={{
                             fontWeight: 700,
-                            borderColor: '#05a854',
-                            color: '#05a854',
+                            borderColor: holding.color,
+                            color: holding.color,
                           }}
                         />
                       </TableCell>
@@ -214,14 +269,8 @@ export default function Portfolio() {
                       <TableCell align="right" sx={{ fontWeight: 600 }}>
                         ${parseFloat(holding.currentValue).toFixed(2)}
                       </TableCell>
-                      <TableCell
-                        align="right"
-                        sx={{
-                          color: holding.gainLoss >= 0 ? '#05a854' : '#d32f2f',
-                          fontWeight: 700,
-                        }}
-                      >
-                        ${parseFloat(holding.gainLoss).toFixed(2)}
+                      <TableCell align="right">
+                        {((parseFloat(holding.currentValue) / (portfolio?.totalPortfolioValue || 1)) * 100).toFixed(1)}%
                       </TableCell>
                       <TableCell
                         align="right"
@@ -230,21 +279,13 @@ export default function Portfolio() {
                           fontWeight: 700,
                         }}
                       >
-                        {parseFloat(holding.gainLossPercent).toFixed(2)}%
+                        ${parseFloat(holding.gainLoss).toFixed(2)} ({parseFloat(holding.gainLossPercent).toFixed(2)}%)
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </TableContainer>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card elevation={0}>
-          <CardContent sx={{ textAlign: 'center', paddingY: 6 }}>
-            <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-              No holdings yet. Start trading to build your portfolio!
-            </Typography>
           </CardContent>
         </Card>
       )}

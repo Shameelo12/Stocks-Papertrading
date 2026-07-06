@@ -12,6 +12,7 @@ import {
   TextField,
   InputAdornment,
   Tooltip,
+  Chip,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
@@ -19,16 +20,18 @@ import LightModeIcon from '@mui/icons-material/LightMode';
 import LogoutIcon from '@mui/icons-material/Logout';
 import SettingsIcon from '@mui/icons-material/Settings';
 import MenuIcon from '@mui/icons-material/Menu';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { usePortfolio } from '../hooks/usePortfolio';
 import { useNavigate } from 'react-router-dom';
 
 export default function Navbar({ onMenuClick }) {
   const { user, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const { portfolio, refetch, lastUpdated } = usePortfolio(3000); // Auto-refresh every 3 seconds
   const [anchorEl, setAnchorEl] = useState(null);
-  const [searchOpen, setSearchOpen] = useState(false);
 
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -115,8 +118,29 @@ export default function Navbar({ onMenuClick }) {
           />
         </Box>
 
-        {/* Right Section - Theme Toggle & Account */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        {/* Right Section - Portfolio Value, Theme Toggle & Account */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          {/* Portfolio Value Chip */}
+          <Chip
+            label={`Portfolio: $${portfolio?.totalPortfolioValue?.toFixed(2) || '0.00'}`}
+            variant="outlined"
+            size="small"
+            sx={{
+              display: { xs: 'none', md: 'flex' },
+              borderColor: '#05a854',
+              color: '#05a854',
+              fontWeight: 600,
+            }}
+          />
+
+          {/* Refresh Button */}
+          <Tooltip title="Refresh portfolio">
+            <IconButton onClick={refetch} color="inherit" size="small" sx={{ opacity: 0.7 }}>
+              <RefreshIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
+          {/* Theme Toggle */}
           <Tooltip title={isDark ? 'Light mode' : 'Dark mode'}>
             <IconButton onClick={toggleTheme} color="inherit" size="small">
               {isDark ? <LightModeIcon /> : <DarkModeIcon />}
@@ -128,7 +152,7 @@ export default function Navbar({ onMenuClick }) {
               {user?.email?.split('@')[0]}
             </Typography>
             <Typography variant="caption" sx={{ opacity: 0.7 }}>
-              Balance: ${user?.balance?.toFixed(2) || '0.00'}
+              Cash: ${portfolio?.currentBalance?.toFixed(2) || '0.00'}
             </Typography>
           </Box>
 
