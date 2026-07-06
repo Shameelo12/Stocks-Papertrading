@@ -1,9 +1,13 @@
 com/papertrading/config/RestTemplateConfig.class
+com/papertrading/dto/PortfolioResponse.class
+com/papertrading/service/PortfolioService.class
 com/papertrading/dto/LoginRequest.class
 com/papertrading/config/JwtAuthenticationFilter.class
 com/papertrading/controller/StockController.class
+com/papertrading/controller/PortfolioController.class
 com/papertrading/repository/HoldingRepository.class
 com/papertrading/service/PolygonService.class
+com/papertrading/dto/HoldingDTO.class
 com/papertrading/model/Transaction$Type.class
 com/papertrading/controller/AuthController.class
 com/papertrading/PaperTradingApplication.class
@@ -22,5 +26,6 @@ com/papertrading/dto/RegisterRequest.class
 com/papertrading/service/AuthService.class
 com/papertrading/dto/StockPriceResponse.class
 com/papertrading/config/JwtUtil.class
+com/papertrading/dto/TransactionDTO.class
 com/papertrading/config/JwtAuthenticationProvider.class
 com/papertrading/model/Holding.class
