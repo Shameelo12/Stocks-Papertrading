@@ -1,8 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import {
+  Container,
+  Box,
+  TextField,
+  Button,
+  Typography,
+  Alert,
+  Paper,
+  CircularProgress,
+} from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 import API from '../api/axios';
-import './Auth.css';
 
 export default function Register() {
   const [email, setEmail] = useState('');
@@ -41,59 +50,134 @@ export default function Register() {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-box">
-        <h1>Paper Trading</h1>
-        <h2>Register</h2>
+    <Container maxWidth="sm">
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+        }}
+      >
+        <Paper
+          elevation={3}
+          sx={{
+            padding: 4,
+            width: '100%',
+            borderRadius: 2,
+          }}
+        >
+          <Typography
+            variant="h4"
+            sx={{
+              color: '#667eea',
+              marginBottom: 0.5,
+              textAlign: 'center',
+              fontWeight: 600,
+            }}
+          >
+            Paper Trading
+          </Typography>
+          <Typography
+            variant="h5"
+            sx={{
+              marginBottom: 3,
+              textAlign: 'center',
+              color: '#666',
+            }}
+          >
+            Register
+          </Typography>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              id="email"
+          <form onSubmit={handleSubmit}>
+            <TextField
+              fullWidth
+              label="Email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              margin="normal"
               placeholder="your@email.com"
+              disabled={loading}
             />
-          </div>
 
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              id="password"
+            <TextField
+              fullWidth
+              label="Password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              margin="normal"
               placeholder="••••••••"
+              disabled={loading}
             />
-          </div>
 
-          <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
-            <input
-              id="confirmPassword"
+            <TextField
+              fullWidth
+              label="Confirm Password"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
+              margin="normal"
               placeholder="••••••••"
+              disabled={loading}
             />
-          </div>
 
-          {error && <div className="error-message">{error}</div>}
+            {error && (
+              <Alert severity="error" sx={{ marginTop: 2, marginBottom: 2 }}>
+                {error}
+              </Alert>
+            )}
 
-          <button type="submit" disabled={loading}>
-            {loading ? 'Creating account...' : 'Register'}
-          </button>
-        </form>
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              sx={{
+                marginTop: 3,
+                padding: '12px',
+                fontSize: '16px',
+                fontWeight: 500,
+                backgroundColor: '#667eea',
+                '&:hover': {
+                  backgroundColor: '#764ba2',
+                },
+              }}
+              disabled={loading}
+            >
+              {loading ? (
+                <CircularProgress size={24} sx={{ color: 'white' }} />
+              ) : (
+                'Register'
+              )}
+            </Button>
+          </form>
 
-        <p className="auth-link">
-          Already have an account? <Link to="/login">Login here</Link>
-        </p>
-      </div>
-    </div>
+          <Typography
+            sx={{
+              marginTop: 3,
+              textAlign: 'center',
+              fontSize: '14px',
+              color: '#666',
+            }}
+          >
+            Already have an account?{' '}
+            <Link
+              to="/login"
+              style={{
+                color: '#667eea',
+                fontWeight: 500,
+                textDecoration: 'none',
+              }}
+            >
+              Login here
+            </Link>
+          </Typography>
+        </Paper>
+      </Box>
+    </Container>
   );
 }
