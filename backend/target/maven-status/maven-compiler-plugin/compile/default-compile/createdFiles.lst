@@ -29,6 +29,7 @@ com/papertrading/service/AuthService.class
 com/papertrading/dto/StockPriceResponse.class
 com/papertrading/config/JwtUtil.class
 com/papertrading/dto/TransactionDTO.class
+com/papertrading/dto/TradeResponse.class
 com/papertrading/config/JwtAuthenticationProvider.class
 com/papertrading/model/Holding.class
 com/papertrading/service/AlphaVantageService.class

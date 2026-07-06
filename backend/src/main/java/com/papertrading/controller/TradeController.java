@@ -1,6 +1,7 @@
 package com.papertrading.controller;
 
 import com.papertrading.dto.TradeRequest;
+import com.papertrading.dto.TradeResponse;
 import com.papertrading.model.Holding;
 import com.papertrading.model.User;
 import com.papertrading.repository.UserRepository;
@@ -32,15 +33,13 @@ public class TradeController {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-            Holding holding = tradeService.buy(user, request);
+            tradeService.buy(user, request);
             userRepository.save(user);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("holding", holding);
-            response.put("balance", user.getBalance());
-            response.put("message", "Buy successful");
-
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(Map.of(
+                    "balance", user.getBalance(),
+                    "message", "Buy successful"
+            ));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("error", e.getMessage()));
@@ -54,15 +53,13 @@ public class TradeController {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-            Holding holding = tradeService.sell(user, request);
+            tradeService.sell(user, request);
             userRepository.save(user);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("holding", holding);
-            response.put("balance", user.getBalance());
-            response.put("message", "Sell successful");
-
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(Map.of(
+                    "balance", user.getBalance(),
+                    "message", "Sell successful"
+            ));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("error", e.getMessage()));

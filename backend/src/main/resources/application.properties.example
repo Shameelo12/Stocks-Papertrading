@@ -10,9 +10,9 @@ spring.datasource.password=postgres
 jwt.secret=your-super-secret-key-that-is-at-least-32-bytes-long-for-production
 jwt.expiration=86400000
 
-# Polygon.io Configuration (get key from polygon.io/dashboard/api-keys)
-polygon.api.key=your-polygon-api-key-here
-polygon.api.url=https://api.polygon.io
+# Alpha Vantage Configuration (get key from https://www.alphavantage.co/api/)
+alpha.vantage.api.key=your-alpha-vantage-api-key-here
+alpha.vantage.api.url=https://www.alphavantage.co/query
 
 # Application Name
 spring.application.name=paper-trading-backend

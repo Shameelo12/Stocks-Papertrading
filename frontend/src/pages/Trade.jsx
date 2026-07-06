@@ -53,6 +53,7 @@ export default function Trade() {
   const handleSelectStock = async (ticker) => {
     setSearchQuery(ticker);
     setShowSuggestions(false);
+    setSuggestions([]);
     fetchStockPrice(ticker);
   };
 
@@ -111,9 +112,9 @@ export default function Trade() {
   const canAfford = totalCost <= user?.balance;
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: '#f8f9fa', paddingTop: 6, paddingBottom: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <Box sx={{ width: '100%', maxWidth: '900px', paddingX: 2 }}>
-        <Box sx={{ textAlign: 'center', marginBottom: 5 }}>
+    <Box sx={{ minHeight: '100vh', backgroundColor: '#f8f9fa', paddingTop: 4, paddingBottom: 6, display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ width: '100%', paddingX: 4, paddingTop: 2 }}>
+        <Box sx={{ textAlign: 'center', marginBottom: 5, maxWidth: '1200px', marginX: 'auto', width: '100%' }}>
           <Typography variant="h3" sx={{ fontWeight: 700, color: '#1a1a1a', marginBottom: 1 }}>
             Trade Stocks
           </Typography>
@@ -130,6 +131,9 @@ export default function Trade() {
             border: '1px solid rgba(0,0,0,0.04)',
             marginBottom: 4,
             overflow: 'visible',
+            maxWidth: '1200px',
+            marginX: 'auto',
+            width: '100%',
           }}
         >
           <CardContent sx={{ padding: 4 }}>
@@ -229,7 +233,7 @@ export default function Trade() {
         </Card>
 
         {stockPrice && (
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3, marginBottom: 4 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3, marginBottom: 4, maxWidth: '1200px', marginX: 'auto', width: '100%' }}>
             <Card
               elevation={0}
               sx={{
@@ -343,6 +347,9 @@ export default function Trade() {
               borderRadius: '16px',
               border: '1px solid rgba(0,0,0,0.04)',
               marginBottom: 4,
+              maxWidth: '1200px',
+              marginX: 'auto',
+              width: '100%',
             }}
           >
             <CardContent sx={{ padding: 4 }}>
