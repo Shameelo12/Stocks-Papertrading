@@ -32,61 +32,67 @@ import NotificationsIcon from '@mui/icons-material/Notifications';
 import API from '../api/axios';
 
 export default function Watchlist() {
-  const [watchlist, setWatchlist] = useState(['AAPL', 'GOOGL', 'MSFT']);
+  const [watchlist, setWatchlist] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [prices, setPrices] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [alerts, setAlerts] = useState([]);
   const [alertTicker, setAlertTicker] = useState('');
   const [alertPrice, setAlertPrice] = useState('');
   const [alertType, setAlertType] = useState('ABOVE');
+  const [editingId, setEditingId] = useState(null);
+  const [editingNotes, setEditingNotes] = useState('');
+  const [editingTarget, setEditingTarget] = useState('');
 
   const handleAddStock = async () => {
     if (!searchQuery.trim()) return;
 
     const ticker = searchQuery.toUpperCase();
-    if (watchlist.includes(ticker)) {
-      setError('Stock already in watchlist');
-      return;
-    }
-
-    // Fetch price to verify it exists
     setLoading(true);
     setError('');
     try {
-      const response = await API.get(`/stocks/${ticker}/price`);
-      setWatchlist([...watchlist, ticker]);
-      setPrices({ ...prices, [ticker]: response.data.price });
+      await API.post('/watchlist', { ticker });
       setSearchQuery('');
+      setError('');
+      fetchWatchlist();
     } catch (err) {
-      setError('Stock not found');
+      setError('Failed to add stock to watchlist');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRemoveStock = (ticker) => {
-    setWatchlist(watchlist.filter((item) => item !== ticker));
-    const newPrices = { ...prices };
-    delete newPrices[ticker];
-    setPrices(newPrices);
+  const handleRemoveStock = async (watchlistId) => {
+    try {
+      await API.delete(`/watchlist/${watchlistId}`);
+      fetchWatchlist();
+    } catch (err) {
+      setError('Failed to remove stock');
+    }
   };
 
-  const handleFetchPrices = async () => {
-    setLoading(true);
-    setError('');
+  const fetchWatchlist = async () => {
     try {
-      const newPrices = {};
-      for (const ticker of watchlist) {
-        const response = await API.get(`/stocks/${ticker}/price`);
-        newPrices[ticker] = response.data.price;
-      }
-      setPrices(newPrices);
+      const response = await API.get('/watchlist');
+      setWatchlist(response.data);
     } catch (err) {
-      setError('Failed to fetch prices');
-    } finally {
-      setLoading(false);
+      setError('Failed to fetch watchlist');
+      console.error(err);
+    }
+  };
+
+  const handleSaveNotes = async (watchlistId) => {
+    try {
+      await API.put(`/watchlist/${watchlistId}`, {
+        notes: editingNotes,
+        targetPrice: editingTarget ? parseFloat(editingTarget) : null,
+      });
+      setEditingId(null);
+      setEditingNotes('');
+      setEditingTarget('');
+      fetchWatchlist();
+    } catch (err) {
+      setError('Failed to save changes');
     }
   };
 
@@ -131,7 +137,7 @@ export default function Watchlist() {
   };
 
   useEffect(() => {
-    handleFetchPrices();
+    fetchWatchlist();
     fetchAlerts();
   }, []);
 
@@ -296,18 +302,10 @@ export default function Watchlist() {
       {watchlist.length > 0 ? (
         <Card elevation={0}>
           <CardContent sx={{ padding: 0 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 3, marginBottom: 0 }}>
+            <Box sx={{ padding: 3, marginBottom: 0 }}>
               <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                Stocks ({watchlist.length})
+                Your Watchlist ({watchlist.length})
               </Typography>
-              <Button
-                size="small"
-                onClick={handleFetchPrices}
-                disabled={loading}
-                variant="outlined"
-              >
-                {loading ? <CircularProgress size={20} /> : 'Refresh Prices'}
-              </Button>
             </Box>
             <TableContainer>
               <Table>
@@ -315,17 +313,19 @@ export default function Watchlist() {
                   <TableRow>
                     <TableCell sx={{ fontWeight: 700 }}>Ticker</TableCell>
                     <TableCell align="right" sx={{ fontWeight: 700 }}>Price</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700 }}>Target</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Notes</TableCell>
                     <TableCell align="center" sx={{ fontWeight: 700 }}>Action</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {watchlist.map((ticker) => (
-                    <TableRow key={ticker} hover>
+                  {watchlist.map((item) => (
+                    <TableRow key={item.id} hover>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <StarIcon sx={{ color: '#ffc107', fontSize: '1.2rem' }} />
                           <Chip
-                            label={ticker}
+                            label={item.ticker}
                             variant="outlined"
                             size="small"
                             sx={{
@@ -337,16 +337,58 @@ export default function Watchlist() {
                         </Box>
                       </TableCell>
                       <TableCell align="right" sx={{ fontWeight: 600 }}>
-                        {prices[ticker] ? `$${parseFloat(prices[ticker]).toFixed(2)}` : '-'}
+                        ${parseFloat(item.currentPrice).toFixed(2)}
+                      </TableCell>
+                      <TableCell align="right">
+                        {editingId === item.id ? (
+                          <TextField
+                            size="small"
+                            value={editingTarget}
+                            onChange={(e) => setEditingTarget(e.target.value)}
+                            type="number"
+                            inputProps={{ step: '0.01' }}
+                            sx={{ width: '100px' }}
+                          />
+                        ) : (
+                          <Typography variant="body2" onClick={() => { setEditingId(item.id); setEditingNotes(item.notes || ''); setEditingTarget(item.targetPrice || ''); }}>
+                            {item.targetPrice ? `$${parseFloat(item.targetPrice).toFixed(2)}` : '—'}
+                          </Typography>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {editingId === item.id ? (
+                          <TextField
+                            size="small"
+                            value={editingNotes}
+                            onChange={(e) => setEditingNotes(e.target.value)}
+                            placeholder="Add notes..."
+                            sx={{ width: '150px' }}
+                          />
+                        ) : (
+                          <Typography variant="caption" sx={{ color: 'text.secondary', maxWidth: '200px', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {item.notes || '—'}
+                          </Typography>
+                        )}
                       </TableCell>
                       <TableCell align="center">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleRemoveStock(ticker)}
-                          sx={{ color: 'error.main' }}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
+                        {editingId === item.id ? (
+                          <Box>
+                            <IconButton size="small" onClick={() => handleSaveNotes(item.id)} sx={{ color: '#05a854' }}>
+                              ✓
+                            </IconButton>
+                            <IconButton size="small" onClick={() => setEditingId(null)} sx={{ color: 'text.secondary' }}>
+                              ✕
+                            </IconButton>
+                          </Box>
+                        ) : (
+                          <IconButton
+                            size="small"
+                            onClick={() => handleRemoveStock(item.id)}
+                            sx={{ color: 'error.main' }}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

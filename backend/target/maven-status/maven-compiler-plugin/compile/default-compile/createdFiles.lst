@@ -11,6 +11,7 @@ com/papertrading/model/PriceAlert$AlertType.class
 com/papertrading/dto/HoldingDTO.class
 com/papertrading/PaperTradingApplication.class
 com/papertrading/controller/TradeController.class
+com/papertrading/repository/WatchlistRepository.class
 com/papertrading/config/SecurityConfig.class
 com/papertrading/controller/GlobalExceptionHandler.class
 com/papertrading/model/Transaction.class
@@ -18,6 +19,7 @@ com/papertrading/service/PriceAlertService.class
 com/papertrading/dto/AuthResponse.class
 com/papertrading/dto/RegisterRequest.class
 com/papertrading/service/AuthService.class
+com/papertrading/service/WatchlistService.class
 com/papertrading/dto/StockPerformanceDTO.class
 com/papertrading/dto/TransactionDTO.class
 com/papertrading/dto/TradeResponse.class
@@ -27,6 +29,7 @@ com/papertrading/repository/PriceAlertRepository.class
 com/papertrading/service/PortfolioService.class
 com/papertrading/dto/LoginRequest.class
 com/papertrading/controller/StockController.class
+com/papertrading/dto/WatchlistDTO.class
 com/papertrading/repository/HoldingRepository.class
 com/papertrading/model/Transaction$Type.class
 com/papertrading/controller/AuthController.class
@@ -35,11 +38,13 @@ com/papertrading/service/AnalyticsService$StockStats.class
 com/papertrading/service/MockPriceService.class
 com/papertrading/dto/TradeRequest.class
 com/papertrading/controller/HealthController.class
+com/papertrading/model/Watchlist.class
 com/papertrading/service/StockSearchService.class
 com/papertrading/repository/TransactionRepository.class
 com/papertrading/repository/UserRepository.class
 com/papertrading/service/TradeService.class
 com/papertrading/dto/StockPriceResponse.class
+com/papertrading/controller/WatchlistController.class
 com/papertrading/config/JwtUtil.class
 com/papertrading/config/JwtAuthenticationProvider.class
 com/papertrading/model/Holding.class

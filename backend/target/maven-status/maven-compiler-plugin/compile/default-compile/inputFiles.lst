@@ -12,6 +12,7 @@
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/controller/PriceAlertController.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/controller/StockController.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/controller/TradeController.java
+/Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/controller/WatchlistController.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/dto/AuthResponse.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/dto/CreatePriceAlertRequest.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/dto/HoldingDTO.java
@@ -27,14 +28,17 @@
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/dto/TradeResponse.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/dto/TradeStatsDTO.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/dto/TransactionDTO.java
+/Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/dto/WatchlistDTO.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/model/Holding.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/model/PriceAlert.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/model/Transaction.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/model/User.java
+/Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/model/Watchlist.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/repository/HoldingRepository.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/repository/PriceAlertRepository.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/repository/TransactionRepository.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/repository/UserRepository.java
+/Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/repository/WatchlistRepository.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/service/AlphaVantageService.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/service/AnalyticsService.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/service/AuthService.java
@@ -43,3 +47,4 @@
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/service/PriceAlertService.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/service/StockSearchService.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/service/TradeService.java
+/Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/service/WatchlistService.java

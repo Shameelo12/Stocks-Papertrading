@@ -1,0 +1,80 @@
+package com.papertrading.controller;
+
+import com.papertrading.dto.WatchlistDTO;
+import com.papertrading.model.User;
+import com.papertrading.repository.UserRepository;
+import com.papertrading.service.WatchlistService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/watchlist")
+public class WatchlistController {
+
+    private final WatchlistService watchlistService;
+    private final UserRepository userRepository;
+
+    public WatchlistController(WatchlistService watchlistService, UserRepository userRepository) {
+        this.watchlistService = watchlistService;
+        this.userRepository = userRepository;
+    }
+
+    @GetMapping
+    public ResponseEntity<List<WatchlistDTO>> getWatchlist(Authentication auth) {
+        String userId = auth.getName();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        List<WatchlistDTO> watchlist = watchlistService.getWatchlist(user);
+        return ResponseEntity.ok(watchlist);
+    }
+
+    @PostMapping
+    public ResponseEntity<WatchlistDTO> addToWatchlist(Authentication auth, @RequestBody Map<String, String> request) {
+        String userId = auth.getName();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        String ticker = request.get("ticker");
+        if (ticker == null || ticker.isEmpty()) {
+            throw new IllegalArgumentException("Ticker is required");
+        }
+
+        WatchlistDTO watchlist = watchlistService.addToWatchlist(user, ticker.toUpperCase());
+        return ResponseEntity.ok(watchlist);
+    }
+
+    @PutMapping("/{watchlistId}")
+    public ResponseEntity<WatchlistDTO> updateWatchlist(
+            Authentication auth,
+            @PathVariable String watchlistId,
+            @RequestBody Map<String, Object> request) {
+        String userId = auth.getName();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        String notes = (String) request.get("notes");
+        BigDecimal targetPrice = null;
+        if (request.get("targetPrice") != null) {
+            targetPrice = new BigDecimal(request.get("targetPrice").toString());
+        }
+
+        WatchlistDTO watchlist = watchlistService.updateWatchlist(user, watchlistId, notes, targetPrice);
+        return ResponseEntity.ok(watchlist);
+    }
+
+    @DeleteMapping("/{watchlistId}")
+    public ResponseEntity<Void> removeFromWatchlist(Authentication auth, @PathVariable String watchlistId) {
+        String userId = auth.getName();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        watchlistService.removeFromWatchlist(user, watchlistId);
+        return ResponseEntity.noContent().build();
+    }
+}
