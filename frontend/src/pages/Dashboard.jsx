@@ -78,43 +78,82 @@ export default function Dashboard() {
 
       <Container maxWidth="lg" sx={{ flex: 1, paddingTop: 4, paddingBottom: 4 }}>
         {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', padding: 4 }}>
-            <CircularProgress sx={{ color: '#05a854' }} />
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+            <CircularProgress sx={{ color: '#05a854' }} size={60} />
           </Box>
         ) : (
           <>
-            <Grid container spacing={3} sx={{ marginBottom: 4 }}>
+            <Grid container spacing={4} sx={{ marginBottom: 5 }}>
               <Grid item xs={12} sm={6} md={3}>
-                <Card sx={{ background: 'linear-gradient(135deg, #1f3a5f 0%, #2a5298 100%)', color: 'white' }}>
-                  <CardContent>
-                    <Typography variant="body2" sx={{ opacity: 0.85, marginBottom: 1, fontWeight: 500 }}>
+                <Card
+                  sx={{
+                    background: 'linear-gradient(135deg, #1f3a5f 0%, #2a5298 100%)',
+                    color: 'white',
+                    borderRadius: '16px',
+                    boxShadow: '0 8px 24px rgba(31, 58, 95, 0.2)',
+                    transition: 'all 0.3s ease',
+                    cursor: 'pointer',
+                    '&:hover': {
+                      transform: 'translateY(-8px)',
+                      boxShadow: '0 16px 40px rgba(31, 58, 95, 0.35)',
+                    },
+                  }}
+                >
+                  <CardContent sx={{ padding: 3 }}>
+                    <Typography variant="body2" sx={{ opacity: 0.85, marginBottom: 1.5, fontWeight: 500, fontSize: '14px' }}>
                       Cash Balance
                     </Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                    <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '32px' }}>
                       ${portfolio?.currentBalance.toFixed(2)}
                     </Typography>
                   </CardContent>
                 </Card>
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
-                <Card sx={{ background: 'linear-gradient(135deg, #05a854 0%, #0d8f47 100%)', color: 'white' }}>
-                  <CardContent>
-                    <Typography variant="body2" sx={{ opacity: 0.85, marginBottom: 1, fontWeight: 500 }}>
+                <Card
+                  sx={{
+                    background: 'linear-gradient(135deg, #05a854 0%, #0d8f47 100%)',
+                    color: 'white',
+                    borderRadius: '16px',
+                    boxShadow: '0 8px 24px rgba(5, 168, 84, 0.2)',
+                    transition: 'all 0.3s ease',
+                    cursor: 'pointer',
+                    '&:hover': {
+                      transform: 'translateY(-8px)',
+                      boxShadow: '0 16px 40px rgba(5, 168, 84, 0.35)',
+                    },
+                  }}
+                >
+                  <CardContent sx={{ padding: 3 }}>
+                    <Typography variant="body2" sx={{ opacity: 0.85, marginBottom: 1.5, fontWeight: 500, fontSize: '14px' }}>
                       Invested
                     </Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                    <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '32px' }}>
                       ${portfolio?.investedBalance.toFixed(2)}
                     </Typography>
                   </CardContent>
                 </Card>
               </Grid>
               <Grid item xs={12} sm={6} md={3}>
-                <Card sx={{ background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)', color: 'white' }}>
-                  <CardContent>
-                    <Typography variant="body2" sx={{ opacity: 0.85, marginBottom: 1, fontWeight: 500 }}>
+                <Card
+                  sx={{
+                    background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
+                    color: 'white',
+                    borderRadius: '16px',
+                    boxShadow: '0 8px 24px rgba(255, 107, 53, 0.2)',
+                    transition: 'all 0.3s ease',
+                    cursor: 'pointer',
+                    '&:hover': {
+                      transform: 'translateY(-8px)',
+                      boxShadow: '0 16px 40px rgba(255, 107, 53, 0.35)',
+                    },
+                  }}
+                >
+                  <CardContent sx={{ padding: 3 }}>
+                    <Typography variant="body2" sx={{ opacity: 0.85, marginBottom: 1.5, fontWeight: 500, fontSize: '14px' }}>
                       Total Value
                     </Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                    <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '32px' }}>
                       ${portfolio?.totalPortfolioValue.toFixed(2)}
                     </Typography>
                   </CardContent>
@@ -125,16 +164,24 @@ export default function Dashboard() {
                   sx={{
                     background: `linear-gradient(135deg, ${portfolio?.totalGainLoss >= 0 ? '#05a854' : '#d32f2f'} 0%, ${portfolio?.totalGainLoss >= 0 ? '#0d8f47' : '#c62828'} 100%)`,
                     color: 'white',
+                    borderRadius: '16px',
+                    boxShadow: portfolio?.totalGainLoss >= 0 ? '0 8px 24px rgba(5, 168, 84, 0.2)' : '0 8px 24px rgba(211, 47, 47, 0.2)',
+                    transition: 'all 0.3s ease',
+                    cursor: 'pointer',
+                    '&:hover': {
+                      transform: 'translateY(-8px)',
+                      boxShadow: portfolio?.totalGainLoss >= 0 ? '0 16px 40px rgba(5, 168, 84, 0.35)' : '0 16px 40px rgba(211, 47, 47, 0.35)',
+                    },
                   }}
                 >
-                  <CardContent>
-                    <Typography variant="body2" sx={{ opacity: 0.85, marginBottom: 1, fontWeight: 500 }}>
+                  <CardContent sx={{ padding: 3 }}>
+                    <Typography variant="body2" sx={{ opacity: 0.85, marginBottom: 1.5, fontWeight: 500, fontSize: '14px' }}>
                       Total Gain/Loss
                     </Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                    <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '32px' }}>
                       ${portfolio?.totalGainLoss.toFixed(2)}
                     </Typography>
-                    <Typography variant="caption" sx={{ opacity: 0.9 }}>
+                    <Typography variant="body2" sx={{ opacity: 0.9, marginTop: 0.5, fontSize: '16px' }}>
                       ({portfolio?.totalGainLossPercent.toFixed(2)}%)
                     </Typography>
                   </CardContent>
@@ -143,39 +190,56 @@ export default function Dashboard() {
             </Grid>
 
             {portfolio?.holdings.length > 0 ? (
-              <Card elevation={0} sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.04)' }}>
+              <Card
+                elevation={0}
+                sx={{
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+                  borderRadius: '16px',
+                  border: '1px solid rgba(0,0,0,0.04)',
+                  overflow: 'hidden',
+                }}
+              >
                 <CardContent sx={{ padding: 0 }}>
-                  <Typography variant="h6" sx={{ padding: 3, marginBottom: 0, fontWeight: 700 }}>
+                  <Typography variant="h5" sx={{ padding: 4, marginBottom: 0, fontWeight: 700 }}>
                     Your Holdings
                   </Typography>
                   <TableContainer>
                     <Table>
                       <TableHead sx={{ backgroundColor: '#f8f9fa', borderTop: '1px solid rgba(0,0,0,0.04)' }}>
                         <TableRow>
-                          <TableCell sx={{ fontWeight: 700, color: '#1a1a1a' }}>Ticker</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: 700, color: '#1a1a1a' }}>Shares</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: 700, color: '#1a1a1a' }}>Avg Cost</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: 700, color: '#1a1a1a' }}>Current Price</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: 700, color: '#1a1a1a' }}>Value</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: 700, color: '#1a1a1a' }}>Gain/Loss</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: '#1a1a1a', fontSize: '15px', padding: '16px' }}>Ticker</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 700, color: '#1a1a1a', fontSize: '15px', padding: '16px' }}>Shares</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 700, color: '#1a1a1a', fontSize: '15px', padding: '16px' }}>Avg Cost</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 700, color: '#1a1a1a', fontSize: '15px', padding: '16px' }}>Current Price</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 700, color: '#1a1a1a', fontSize: '15px', padding: '16px' }}>Value</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 700, color: '#1a1a1a', fontSize: '15px', padding: '16px' }}>Gain/Loss</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {portfolio?.holdings.map((holding) => (
-                          <TableRow key={holding.ticker} hover sx={{ '&:hover': { backgroundColor: '#f8f9fa' } }}>
-                            <TableCell sx={{ fontWeight: 700, color: '#1a1a1a' }}>
+                          <TableRow
+                            key={holding.ticker}
+                            hover
+                            sx={{
+                              '&:hover': {
+                                backgroundColor: '#f8f9fa',
+                              },
+                              borderBottom: '1px solid rgba(0,0,0,0.04)',
+                            }}
+                          >
+                            <TableCell sx={{ fontWeight: 700, color: '#1a1a1a', fontSize: '15px', padding: '16px' }}>
                               {holding.ticker}
                             </TableCell>
-                            <TableCell align="right">
+                            <TableCell align="right" sx={{ fontSize: '15px', padding: '16px' }}>
                               {parseFloat(holding.shares).toFixed(2)}
                             </TableCell>
-                            <TableCell align="right">
+                            <TableCell align="right" sx={{ fontSize: '15px', padding: '16px' }}>
                               ${parseFloat(holding.avgCostPerShare).toFixed(2)}
                             </TableCell>
-                            <TableCell align="right">
+                            <TableCell align="right" sx={{ fontSize: '15px', padding: '16px' }}>
                               ${parseFloat(holding.currentPrice).toFixed(2)}
                             </TableCell>
-                            <TableCell align="right" sx={{ fontWeight: 600 }}>
+                            <TableCell align="right" sx={{ fontWeight: 600, fontSize: '15px', padding: '16px' }}>
                               ${parseFloat(holding.currentValue).toFixed(2)}
                             </TableCell>
                             <TableCell
@@ -183,6 +247,8 @@ export default function Dashboard() {
                               sx={{
                                 color: holding.gainLoss >= 0 ? '#05a854' : '#d32f2f',
                                 fontWeight: 700,
+                                fontSize: '15px',
+                                padding: '16px',
                               }}
                             >
                               ${parseFloat(holding.gainLoss).toFixed(2)} ({parseFloat(holding.gainLossPercent).toFixed(2)}%)
@@ -195,12 +261,19 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
             ) : (
-              <Card elevation={0} sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.04)' }}>
-                <CardContent sx={{ textAlign: 'center', padding: 5 }}>
-                  <Typography variant="h6" sx={{ color: '#1a1a1a', marginBottom: 1 }}>
+              <Card
+                elevation={0}
+                sx={{
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+                  borderRadius: '16px',
+                  border: '1px solid rgba(0,0,0,0.04)',
+                }}
+              >
+                <CardContent sx={{ textAlign: 'center', padding: 6 }}>
+                  <Typography variant="h4" sx={{ color: '#1a1a1a', marginBottom: 1.5, fontWeight: 700 }}>
                     Start Trading
                   </Typography>
-                  <Typography variant="body1" sx={{ color: '#666', marginBottom: 3 }}>
+                  <Typography variant="h6" sx={{ color: '#666', marginBottom: 4, fontWeight: 400 }}>
                     You don't have any holdings yet. Search and buy your first stock.
                   </Typography>
                   <Button
@@ -208,7 +281,17 @@ export default function Dashboard() {
                     onClick={() => navigate('/trade')}
                     sx={{
                       backgroundColor: '#05a854',
-                      '&:hover': { backgroundColor: '#0d8f47' },
+                      padding: '14px 32px',
+                      fontSize: '16px',
+                      fontWeight: 700,
+                      borderRadius: '10px',
+                      boxShadow: '0 6px 16px rgba(5, 168, 84, 0.25)',
+                      '&:hover': {
+                        backgroundColor: '#0d8f47',
+                        boxShadow: '0 8px 20px rgba(5, 168, 84, 0.35)',
+                        transform: 'translateY(-2px)',
+                      },
+                      transition: 'all 0.2s ease',
                     }}
                   >
                     Make Your First Trade

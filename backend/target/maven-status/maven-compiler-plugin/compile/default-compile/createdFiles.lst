@@ -1,5 +1,6 @@
 com/papertrading/config/RestTemplateConfig.class
 com/papertrading/dto/PortfolioResponse.class
+com/papertrading/dto/StockSuggestion.class
 com/papertrading/service/PortfolioService.class
 com/papertrading/dto/LoginRequest.class
 com/papertrading/config/JwtAuthenticationFilter.class
@@ -16,6 +17,7 @@ com/papertrading/model/User.class
 com/papertrading/config/SecurityConfig.class
 com/papertrading/dto/TradeRequest.class
 com/papertrading/controller/HealthController.class
+com/papertrading/service/StockSearchService.class
 com/papertrading/repository/TransactionRepository.class
 com/papertrading/controller/GlobalExceptionHandler.class
 com/papertrading/model/Transaction.class

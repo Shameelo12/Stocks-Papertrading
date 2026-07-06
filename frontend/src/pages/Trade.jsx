@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Container,
   Box,
   TextField,
   Button,
@@ -9,8 +8,12 @@ import {
   Typography,
   Alert,
   CircularProgress,
-  Grid,
   ButtonGroup,
+  Paper,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { useAuth } from '../context/AuthContext';
@@ -19,6 +22,8 @@ import API from '../api/axios';
 export default function Trade() {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [stockPrice, setStockPrice] = useState(null);
   const [shares, setShares] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,22 +31,51 @@ export default function Trade() {
   const [success, setSuccess] = useState('');
   const [tradeType, setTradeType] = useState('buy');
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      fetchSuggestions();
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  }, [searchQuery]);
 
+  const fetchSuggestions = async () => {
+    try {
+      const response = await API.get(`/stocks/suggestions?q=${searchQuery}`);
+      setSuggestions(response.data);
+      setShowSuggestions(true);
+    } catch (err) {
+      setSuggestions([]);
+    }
+  };
+
+  const handleSelectStock = async (ticker) => {
+    setSearchQuery(ticker);
+    setShowSuggestions(false);
+    fetchStockPrice(ticker);
+  };
+
+  const fetchStockPrice = async (ticker) => {
     setLoading(true);
     setError('');
     setStockPrice(null);
 
     try {
-      const response = await API.get(`/stocks/search?q=${searchQuery.toUpperCase()}`);
+      const response = await API.get(`/stocks/${ticker}/price`);
       setStockPrice(response.data);
     } catch (err) {
-      setError('Stock not found. Please check the ticker symbol.');
+      setError('Unable to fetch stock price. Please try another ticker.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    setShowSuggestions(false);
+    fetchStockPrice(searchQuery.toUpperCase());
   };
 
   const handleTrade = async () => {
@@ -77,165 +111,287 @@ export default function Trade() {
   const canAfford = totalCost <= user?.balance;
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: '#f8f9fa', paddingTop: 4, paddingBottom: 4 }}>
-      <Container maxWidth="lg">
-        <Typography variant="h4" sx={{ marginBottom: 4, fontWeight: 700, color: '#1a1a1a' }}>
-          Trade Stocks
-        </Typography>
+    <Box sx={{ minHeight: '100vh', backgroundColor: '#f8f9fa', paddingTop: 6, paddingBottom: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Box sx={{ width: '100%', maxWidth: '900px', paddingX: 2 }}>
+        <Box sx={{ textAlign: 'center', marginBottom: 5 }}>
+          <Typography variant="h3" sx={{ fontWeight: 700, color: '#1a1a1a', marginBottom: 1 }}>
+            Trade Stocks
+          </Typography>
+          <Typography variant="body1" sx={{ color: '#666' }}>
+            Search for a stock and make your trade
+          </Typography>
+        </Box>
 
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
-            <Card elevation={0} sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.04)' }}>
-              <CardContent>
-                <Typography variant="h6" sx={{ marginBottom: 3, fontWeight: 700 }}>
-                  Search Stocks
-                </Typography>
+        <Card
+          elevation={0}
+          sx={{
+            boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+            borderRadius: '16px',
+            border: '1px solid rgba(0,0,0,0.04)',
+            marginBottom: 4,
+            overflow: 'visible',
+          }}
+        >
+          <CardContent sx={{ padding: 4 }}>
+            <Typography variant="h6" sx={{ marginBottom: 3, fontWeight: 700 }}>
+              Find Your Stock
+            </Typography>
 
-                <form onSubmit={handleSearch}>
-                  <TextField
-                    fullWidth
-                    label="Stock Ticker"
-                    placeholder="e.g., AAPL, GOOGL, MSFT"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    disabled={loading}
-                    margin="normal"
-                  />
-                  <Button
-                    type="submit"
-                    fullWidth
-                    variant="contained"
-                    startIcon={<SearchIcon />}
+            <Box sx={{ position: 'relative' }}>
+              <form onSubmit={handleSearch}>
+                <TextField
+                  fullWidth
+                  label="Stock Ticker or Company Name"
+                  placeholder="e.g., AAPL, Apple, GOOGL"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  disabled={loading}
+                  variant="outlined"
+                  sx={{
+                    marginBottom: showSuggestions && suggestions.length > 0 ? 0 : 2,
+                    '& .MuiOutlinedInput-root': {
+                      fontSize: '16px',
+                    },
+                  }}
+                />
+                {showSuggestions && suggestions.length > 0 && (
+                  <Paper
+                    elevation={2}
                     sx={{
-                      marginTop: 2,
-                      backgroundColor: '#05a854',
-                      '&:hover': { backgroundColor: '#0d8f47' },
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      zIndex: 10,
+                      maxHeight: '300px',
+                      overflow: 'auto',
+                      marginTop: 1,
+                      borderRadius: '12px',
                     }}
-                    disabled={loading}
                   >
-                    {loading ? <CircularProgress size={24} sx={{ color: 'white' }} /> : 'Search'}
-                  </Button>
-                </form>
+                    <List sx={{ padding: 0 }}>
+                      {suggestions.map((stock) => (
+                        <ListItemButton
+                          key={stock.ticker}
+                          onClick={() => handleSelectStock(stock.ticker)}
+                          sx={{
+                            padding: '12px 16px',
+                            borderBottom: '1px solid rgba(0,0,0,0.04)',
+                            '&:last-child': {
+                              borderBottom: 'none',
+                            },
+                            '&:hover': {
+                              backgroundColor: '#f0f7ff',
+                            },
+                          }}
+                        >
+                          <ListItemText
+                            primary={stock.ticker}
+                            secondary={stock.name}
+                            primaryTypographyProps={{ fontWeight: 600, color: '#05a854' }}
+                            secondaryTypographyProps={{ color: '#666' }}
+                          />
+                        </ListItemButton>
+                      ))}
+                    </List>
+                  </Paper>
+                )}
+              </form>
 
-                {error && <Alert severity="error" sx={{ marginTop: 2 }}>{error}</Alert>}
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {stockPrice && (
-            <Grid item xs={12} md={6}>
-              <Card
-                elevation={0}
+              <Button
+                onClick={handleSearch}
+                fullWidth
+                variant="contained"
+                startIcon={<SearchIcon />}
+                disabled={loading || !searchQuery.trim()}
                 sx={{
-                  background: 'linear-gradient(135deg, #1f3a5f 0%, #2a5298 100%)',
-                  color: 'white',
-                  boxShadow: '0 8px 24px rgba(31, 58, 95, 0.2)',
-                  border: '1px solid rgba(255,255,255,0.1)',
+                  marginTop: 2,
+                  padding: '14px',
+                  fontSize: '16px',
+                  fontWeight: 600,
+                  backgroundColor: '#05a854',
+                  borderRadius: '10px',
+                  boxShadow: '0 4px 12px rgba(5, 168, 84, 0.2)',
+                  '&:hover': {
+                    backgroundColor: '#0d8f47',
+                    boxShadow: '0 6px 16px rgba(5, 168, 84, 0.3)',
+                    transform: 'translateY(-2px)',
+                  },
+                  transition: 'all 0.2s ease',
                 }}
               >
-                <CardContent>
-                  <Typography variant="body2" sx={{ opacity: 0.85, marginBottom: 1, fontWeight: 500 }}>
-                    Current Price
-                  </Typography>
-                  <Typography variant="h3" sx={{ marginBottom: 3, fontWeight: 700 }}>
-                    ${parseFloat(stockPrice.price).toFixed(2)}
-                  </Typography>
-                  <Typography variant="h6" sx={{ opacity: 0.95, marginBottom: 2, fontWeight: 600 }}>
-                    {stockPrice.ticker}
-                  </Typography>
-                  <Typography variant="caption" sx={{ opacity: 0.75 }}>
-                    Last updated: {new Date(stockPrice.timestamp).toLocaleTimeString()}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          )}
+                {loading ? <CircularProgress size={24} sx={{ color: 'white' }} /> : 'Search'}
+              </Button>
+            </Box>
 
-          {stockPrice && (
-            <Grid item xs={12}>
-              <Card elevation={0} sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.04)' }}>
-                <CardContent>
-                  <Typography variant="h6" sx={{ marginBottom: 3, fontWeight: 700 }}>
-                    Execute Trade
-                  </Typography>
+            {error && <Alert severity="error" sx={{ marginTop: 2 }}>{error}</Alert>}
+          </CardContent>
+        </Card>
 
-                  <ButtonGroup fullWidth sx={{ marginBottom: 3 }}>
-                    <Button
-                      variant={tradeType === 'buy' ? 'contained' : 'outlined'}
-                      onClick={() => setTradeType('buy')}
-                      sx={{
-                        backgroundColor: tradeType === 'buy' ? '#05a854' : 'transparent',
-                        color: tradeType === 'buy' ? 'white' : '#05a854',
-                        borderColor: '#05a854',
-                        fontWeight: 600,
-                      }}
-                    >
-                      BUY
-                    </Button>
-                    <Button
-                      variant={tradeType === 'sell' ? 'contained' : 'outlined'}
-                      onClick={() => setTradeType('sell')}
-                      sx={{
-                        backgroundColor: tradeType === 'sell' ? '#d32f2f' : 'transparent',
-                        color: tradeType === 'sell' ? 'white' : '#d32f2f',
-                        borderColor: '#d32f2f',
-                        fontWeight: 600,
-                      }}
-                    >
-                      SELL
-                    </Button>
-                  </ButtonGroup>
+        {stockPrice && (
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3, marginBottom: 4 }}>
+            <Card
+              elevation={0}
+              sx={{
+                background: 'linear-gradient(135deg, #1f3a5f 0%, #2a5298 100%)',
+                color: 'white',
+                boxShadow: '0 12px 32px rgba(31, 58, 95, 0.25)',
+                borderRadius: '16px',
+                border: '1px solid rgba(255,255,255,0.1)',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 16px 40px rgba(31, 58, 95, 0.35)',
+                },
+              }}
+            >
+              <CardContent sx={{ padding: 3 }}>
+                <Typography variant="body2" sx={{ opacity: 0.85, marginBottom: 1, fontWeight: 500 }}>
+                  Current Price
+                </Typography>
+                <Typography variant="h2" sx={{ marginBottom: 2, fontWeight: 700 }}>
+                  ${parseFloat(stockPrice.price).toFixed(2)}
+                </Typography>
+                <Typography variant="h5" sx={{ opacity: 0.95, marginBottom: 1, fontWeight: 700 }}>
+                  {stockPrice.ticker}
+                </Typography>
+                <Typography variant="caption" sx={{ opacity: 0.75 }}>
+                  Updated: {new Date(stockPrice.timestamp).toLocaleTimeString()}
+                </Typography>
+              </CardContent>
+            </Card>
 
-                  <TextField
-                    fullWidth
-                    label="Number of Shares"
-                    type="number"
-                    value={shares}
-                    onChange={(e) => setShares(e.target.value)}
-                    disabled={loading}
-                    margin="normal"
-                    inputProps={{ step: '0.01', min: '0' }}
-                  />
+            <Card
+              elevation={0}
+              sx={{
+                boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+                borderRadius: '16px',
+                border: '1px solid rgba(0,0,0,0.04)',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
+                },
+              }}
+            >
+              <CardContent sx={{ padding: 3 }}>
+                <Typography variant="h6" sx={{ marginBottom: 3, fontWeight: 700 }}>
+                  Execute Trade
+                </Typography>
 
-                  <Box sx={{ backgroundColor: '#f8f9fa', padding: 2, borderRadius: 2, marginTop: 2, marginBottom: 2, border: '1px solid rgba(0,0,0,0.04)' }}>
-                    <Typography variant="body2" sx={{ marginBottom: 1 }}>
-                      Total {tradeType === 'buy' ? 'Cost' : 'Value'}: <strong>${totalCost.toFixed(2)}</strong>
-                    </Typography>
-                    <Typography variant="body2" sx={{ marginBottom: 1, color: canAfford || tradeType === 'sell' ? '#666' : '#d32f2f' }}>
-                      Available Balance: <strong>${user?.balance.toFixed(2)}</strong>
-                    </Typography>
-                    {tradeType === 'buy' && !canAfford && (
-                      <Typography variant="caption" sx={{ color: '#d32f2f', fontWeight: 500 }}>
-                        ⚠️ Insufficient balance
-                      </Typography>
-                    )}
-                  </Box>
-
-                  {success && <Alert severity="success" sx={{ marginBottom: 2 }}>{success}</Alert>}
-                  {error && <Alert severity="error" sx={{ marginBottom: 2 }}>{error}</Alert>}
-
+                <ButtonGroup fullWidth sx={{ marginBottom: 3 }}>
                   <Button
-                    fullWidth
-                    variant="contained"
-                    onClick={handleTrade}
-                    disabled={loading || !shares || (tradeType === 'buy' && !canAfford)}
+                    variant={tradeType === 'buy' ? 'contained' : 'outlined'}
+                    onClick={() => setTradeType('buy')}
                     sx={{
-                      backgroundColor: tradeType === 'buy' ? '#05a854' : '#d32f2f',
                       padding: '12px',
-                      fontWeight: 600,
+                      fontWeight: 700,
+                      fontSize: '15px',
+                      backgroundColor: tradeType === 'buy' ? '#05a854' : 'transparent',
+                      color: tradeType === 'buy' ? 'white' : '#05a854',
+                      borderColor: '#05a854',
+                      borderRadius: '10px',
                       '&:hover': {
-                        backgroundColor: tradeType === 'buy' ? '#0d8f47' : '#b71c1c',
+                        backgroundColor: tradeType === 'buy' ? '#0d8f47' : 'rgba(5, 168, 84, 0.05)',
                       },
                     }}
                   >
-                    {loading ? <CircularProgress size={24} sx={{ color: 'white' }} /> : `${tradeType.toUpperCase()} ${shares} ${stockPrice.ticker}`}
+                    BUY
                   </Button>
-                </CardContent>
-              </Card>
-            </Grid>
-          )}
-        </Grid>
-      </Container>
+                  <Button
+                    variant={tradeType === 'sell' ? 'contained' : 'outlined'}
+                    onClick={() => setTradeType('sell')}
+                    sx={{
+                      padding: '12px',
+                      fontWeight: 700,
+                      fontSize: '15px',
+                      backgroundColor: tradeType === 'sell' ? '#d32f2f' : 'transparent',
+                      color: tradeType === 'sell' ? 'white' : '#d32f2f',
+                      borderColor: '#d32f2f',
+                      borderRadius: '10px',
+                      '&:hover': {
+                        backgroundColor: tradeType === 'sell' ? '#b71c1c' : 'rgba(211, 47, 47, 0.05)',
+                      },
+                    }}
+                  >
+                    SELL
+                  </Button>
+                </ButtonGroup>
+
+                <TextField
+                  fullWidth
+                  label="Number of Shares"
+                  type="number"
+                  value={shares}
+                  onChange={(e) => setShares(e.target.value)}
+                  disabled={loading}
+                  variant="outlined"
+                  margin="normal"
+                  inputProps={{ step: '0.01', min: '0' }}
+                  sx={{ marginBottom: 2 }}
+                />
+              </CardContent>
+            </Card>
+          </Box>
+        )}
+
+        {stockPrice && (
+          <Card
+            elevation={0}
+            sx={{
+              boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+              borderRadius: '16px',
+              border: '1px solid rgba(0,0,0,0.04)',
+              marginBottom: 4,
+            }}
+          >
+            <CardContent sx={{ padding: 4 }}>
+              <Box sx={{ backgroundColor: '#f8f9fa', padding: 3, borderRadius: '12px', marginBottom: 3 }}>
+                <Typography variant="body1" sx={{ marginBottom: 2, fontSize: '16px' }}>
+                  <strong>Total {tradeType === 'buy' ? 'Cost' : 'Value'}:</strong> ${totalCost.toFixed(2)}
+                </Typography>
+                <Typography variant="body1" sx={{ marginBottom: 1, fontSize: '16px', color: canAfford || tradeType === 'sell' ? '#666' : '#d32f2f' }}>
+                  <strong>Available Balance:</strong> ${user?.balance.toFixed(2)}
+                </Typography>
+                {tradeType === 'buy' && !canAfford && (
+                  <Typography variant="body2" sx={{ color: '#d32f2f', fontWeight: 600, marginTop: 1 }}>
+                    ⚠️ Insufficient balance for this trade
+                  </Typography>
+                )}
+              </Box>
+
+              {success && <Alert severity="success" sx={{ marginBottom: 2 }}>{success}</Alert>}
+              {error && <Alert severity="error" sx={{ marginBottom: 2 }}>{error}</Alert>}
+
+              <Button
+                fullWidth
+                variant="contained"
+                onClick={handleTrade}
+                disabled={loading || !shares || (tradeType === 'buy' && !canAfford)}
+                sx={{
+                  backgroundColor: tradeType === 'buy' ? '#05a854' : '#d32f2f',
+                  padding: '16px',
+                  fontSize: '16px',
+                  fontWeight: 700,
+                  borderRadius: '10px',
+                  boxShadow: tradeType === 'buy' ? '0 6px 16px rgba(5, 168, 84, 0.25)' : '0 6px 16px rgba(211, 47, 47, 0.25)',
+                  '&:hover': {
+                    backgroundColor: tradeType === 'buy' ? '#0d8f47' : '#b71c1c',
+                    boxShadow: tradeType === 'buy' ? '0 8px 20px rgba(5, 168, 84, 0.35)' : '0 8px 20px rgba(211, 47, 47, 0.35)',
+                    transform: 'translateY(-2px)',
+                  },
+                  '&:disabled': {
+                    opacity: 0.5,
+                  },
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {loading ? <CircularProgress size={24} sx={{ color: 'white' }} /> : `${tradeType.toUpperCase()} ${shares || '0'} ${stockPrice?.ticker || 'Shares'}`}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </Box>
     </Box>
   );
 }
