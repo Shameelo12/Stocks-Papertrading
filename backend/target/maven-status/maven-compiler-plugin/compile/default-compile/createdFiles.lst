@@ -5,6 +5,7 @@ com/papertrading/service/PortfolioService.class
 com/papertrading/dto/LoginRequest.class
 com/papertrading/config/JwtAuthenticationFilter.class
 com/papertrading/controller/StockController.class
+com/papertrading/dto/PortfolioHistoryDTO.class
 com/papertrading/controller/PortfolioController.class
 com/papertrading/repository/HoldingRepository.class
 com/papertrading/dto/HoldingDTO.class

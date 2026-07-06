@@ -13,6 +13,7 @@
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/dto/AuthResponse.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/dto/HoldingDTO.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/dto/LoginRequest.java
+/Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/dto/PortfolioHistoryDTO.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/dto/PortfolioResponse.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/dto/RegisterRequest.java
 /Users/shameel/Documents/Stocks-Papertrading/backend/src/main/java/com/papertrading/dto/StockPriceResponse.java

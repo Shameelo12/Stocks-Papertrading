@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container,
   Box,
@@ -19,13 +19,37 @@ import {
 } from '@mui/material';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { usePortfolio } from '../hooks/usePortfolio';
+import API from '../api/axios';
 
 const COLORS = ['#05a854', '#1f3a5f', '#ff6b35', '#f7931e', '#2196f3', '#9c27b0', '#e91e63', '#009688'];
 
 export default function Portfolio() {
   const { portfolio, loading, error, lastUpdated } = usePortfolio(5000); // Auto-refresh every 5 seconds
+  const [historyData, setHistoryData] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const response = await API.get('/portfolio/history');
+        const formattedData = response.data.map(item => ({
+          timestamp: new Date(item.timestamp).toLocaleDateString(),
+          portfolioValue: parseFloat(item.portfolioValue),
+          balance: parseFloat(item.balance),
+          investedValue: parseFloat(item.investedValue),
+        }));
+        setHistoryData(formattedData);
+      } catch (err) {
+        console.error('Failed to fetch portfolio history:', err);
+      } finally {
+        setHistoryLoading(false);
+      }
+    };
+
+    fetchHistory();
+  }, []);
 
   if (loading) {
     return (
@@ -227,6 +251,59 @@ export default function Portfolio() {
           </Card>
         </Grid>
       </Grid>
+
+      {/* Performance Chart */}
+      <Card elevation={0} sx={{ marginBottom: 4 }}>
+        <CardContent>
+          <Typography variant="h6" sx={{ fontWeight: 700, marginBottom: 3 }}>
+            Portfolio Performance
+          </Typography>
+          {historyLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', padding: 4 }}>
+              <CircularProgress sx={{ color: '#05a854' }} />
+            </Box>
+          ) : historyData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={historyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
+                <XAxis
+                  dataKey="timestamp"
+                  stroke="rgba(0,0,0,0.5)"
+                  style={{ fontSize: '12px' }}
+                />
+                <YAxis
+                  stroke="rgba(0,0,0,0.5)"
+                  style={{ fontSize: '12px' }}
+                  tickFormatter={(value) => `$${value.toFixed(0)}`}
+                />
+                <Tooltip
+                  formatter={(value) => `$${parseFloat(value).toFixed(2)}`}
+                  contentStyle={{
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    border: 'none',
+                    borderRadius: '4px',
+                    color: 'white',
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="portfolioValue"
+                  stroke="#05a854"
+                  strokeWidth={2}
+                  dot={false}
+                  isAnimationActive={true}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <Box sx={{ textAlign: 'center', padding: 4 }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                No history yet
+              </Typography>
+            </Box>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Detailed Holdings Table */}
       {holdingsData.length > 0 && (

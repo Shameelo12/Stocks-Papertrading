@@ -1,5 +1,6 @@
 package com.papertrading.controller;
 
+import com.papertrading.dto.PortfolioHistoryDTO;
 import com.papertrading.dto.PortfolioResponse;
 import com.papertrading.dto.TransactionDTO;
 import com.papertrading.model.User;
@@ -43,5 +44,15 @@ public class PortfolioController {
 
         List<TransactionDTO> transactions = portfolioService.getTransactionHistory(user);
         return ResponseEntity.ok(transactions);
+    }
+
+    @GetMapping("/history")
+    public ResponseEntity<List<PortfolioHistoryDTO>> getPortfolioHistory(Authentication auth) {
+        String userId = auth.getName();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        List<PortfolioHistoryDTO> history = portfolioService.getPortfolioHistory(user);
+        return ResponseEntity.ok(history);
     }
 }
