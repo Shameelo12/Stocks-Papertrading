@@ -150,9 +150,8 @@ export default function Sidebar({ open, onClose }) {
           borderRight: '1px solid',
           borderColor: 'divider',
           bgcolor: 'background.paper',
-          height: 'calc(100vh - 64px)',
-          position: 'sticky',
-          top: 64,
+          height: '100%',
+          overflow: 'auto',
         }}
       >
         {drawerContent}
