@@ -6,7 +6,6 @@ import {
   CardContent,
   Typography,
   Switch,
-  FormControlLabel,
   Divider,
   Button,
   Grid,
@@ -17,8 +16,6 @@ import {
   Alert,
 } from '@mui/material';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import SecurityIcon from '@mui/icons-material/Security';
 import InfoIcon from '@mui/icons-material/Info';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useTheme } from '../context/ThemeContext';
@@ -105,28 +102,6 @@ export default function Settings() {
                 onChange={toggleTheme}
                 color="primary"
               />
-            </ListItem>
-            <Divider sx={{ my: 1 }} />
-            <ListItem sx={{ paddingX: 0, paddingY: 2 }}>
-              <ListItemIcon>
-                <NotificationsIcon />
-              </ListItemIcon>
-              <ListItemText
-                primary="Notifications"
-                secondary="Receive trade alerts (coming soon)"
-              />
-              <Switch edge="end" disabled color="primary" />
-            </ListItem>
-            <Divider sx={{ my: 1 }} />
-            <ListItem sx={{ paddingX: 0, paddingY: 2 }}>
-              <ListItemIcon>
-                <SecurityIcon />
-              </ListItemIcon>
-              <ListItemText
-                primary="Two-Factor Authentication"
-                secondary="Secure your account (coming soon)"
-              />
-              <Switch edge="end" disabled color="primary" />
             </ListItem>
           </List>
         </CardContent>
