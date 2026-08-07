@@ -7,6 +7,7 @@ import com.papertrading.model.User;
 import com.papertrading.repository.UserRepository;
 import com.papertrading.service.TradeService;
 import com.papertrading.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -30,7 +31,7 @@ public class TradeController {
     }
 
     @PostMapping("/buy")
-    public ResponseEntity<Map<String, Object>> buy(@RequestBody TradeRequest request, Authentication auth) {
+    public ResponseEntity<Map<String, Object>> buy(@Valid @RequestBody TradeRequest request, Authentication auth) {
         try {
             User user = userService.getCurrentUser(auth);
             tradeService.buy(user, request);
@@ -47,7 +48,7 @@ public class TradeController {
     }
 
     @PostMapping("/sell")
-    public ResponseEntity<Map<String, Object>> sell(@RequestBody TradeRequest request, Authentication auth) {
+    public ResponseEntity<Map<String, Object>> sell(@Valid @RequestBody TradeRequest request, Authentication auth) {
         try {
             User user = userService.getCurrentUser(auth);
             tradeService.sell(user, request);

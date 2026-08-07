@@ -5,6 +5,7 @@ import com.papertrading.dto.PriceAlertDTO;
 import com.papertrading.model.User;
 import com.papertrading.service.PriceAlertService;
 import com.papertrading.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -31,7 +32,7 @@ public class PriceAlertController {
     }
 
     @PostMapping
-    public ResponseEntity<PriceAlertDTO> createAlert(Authentication auth, @RequestBody CreatePriceAlertRequest request) {
+    public ResponseEntity<PriceAlertDTO> createAlert(Authentication auth, @Valid @RequestBody CreatePriceAlertRequest request) {
         User user = userService.getCurrentUser(auth);
 
         if (request.getTicker() == null || request.getTicker().isEmpty()) {

@@ -4,6 +4,7 @@ import com.papertrading.dto.WatchlistDTO;
 import com.papertrading.model.User;
 import com.papertrading.service.WatchlistService;
 import com.papertrading.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -32,7 +33,7 @@ public class WatchlistController {
     }
 
     @PostMapping
-    public ResponseEntity<WatchlistDTO> addToWatchlist(Authentication auth, @RequestBody Map<String, String> request) {
+    public ResponseEntity<WatchlistDTO> addToWatchlist(Authentication auth, @Valid @RequestBody Map<String, String> request) {
         User user = userService.getCurrentUser(auth);
 
         String ticker = request.get("ticker");

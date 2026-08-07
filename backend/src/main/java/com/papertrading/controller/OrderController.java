@@ -5,6 +5,7 @@ import com.papertrading.dto.PendingOrderDTO;
 import com.papertrading.model.User;
 import com.papertrading.service.OrderService;
 import com.papertrading.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -38,7 +39,7 @@ public class OrderController {
     }
 
     @PostMapping
-    public ResponseEntity<PendingOrderDTO> createLimitOrder(Authentication auth, @RequestBody CreateLimitOrderRequest request) {
+    public ResponseEntity<PendingOrderDTO> createLimitOrder(Authentication auth, @Valid @RequestBody CreateLimitOrderRequest request) {
         User user = userService.getCurrentUser(auth);
 
         if (request.getTicker() == null || request.getTicker().isEmpty()) {

@@ -1,11 +1,25 @@
 package com.papertrading.dto;
 
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import java.math.BigDecimal;
 
 public class CreateLimitOrderRequest {
+    @NotBlank(message = "Ticker is required")
     private String ticker;
-    private String type; // BUY or SELL
+
+    @NotBlank(message = "Order type is required")
+    @Pattern(regexp = "(?i)(BUY|SELL)", message = "Type must be BUY or SELL")
+    private String type;
+
+    @NotNull(message = "Shares is required")
+    @DecimalMin(value = "0.01", message = "Shares must be greater than 0")
     private BigDecimal shares;
+
+    @NotNull(message = "Limit price is required")
+    @DecimalMin(value = "0.01", message = "Limit price must be greater than 0")
     private BigDecimal limitPrice;
 
     public CreateLimitOrderRequest() {}
