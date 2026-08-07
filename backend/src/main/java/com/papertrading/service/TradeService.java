@@ -6,6 +6,7 @@ import com.papertrading.model.Transaction;
 import com.papertrading.model.User;
 import com.papertrading.repository.HoldingRepository;
 import com.papertrading.repository.TransactionRepository;
+import com.papertrading.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -20,11 +21,14 @@ public class TradeService {
 
     private final HoldingRepository holdingRepository;
     private final TransactionRepository transactionRepository;
+    private final UserRepository userRepository;
     private final AlphaVantageService alphaVantageService;
 
-    public TradeService(HoldingRepository holdingRepository, TransactionRepository transactionRepository, AlphaVantageService alphaVantageService) {
+    public TradeService(HoldingRepository holdingRepository, TransactionRepository transactionRepository,
+                       UserRepository userRepository, AlphaVantageService alphaVantageService) {
         this.holdingRepository = holdingRepository;
         this.transactionRepository = transactionRepository;
+        this.userRepository = userRepository;
         this.alphaVantageService = alphaVantageService;
     }
 
@@ -50,6 +54,7 @@ public class TradeService {
         }
 
         user.setBalance(user.getBalance().subtract(totalCost));
+        userRepository.save(user);
 
         Optional<Holding> existingHolding = holdingRepository.findByUserAndTicker(user, ticker);
 
@@ -107,6 +112,7 @@ public class TradeService {
         BigDecimal totalValue = price.multiply(shares);
 
         user.setBalance(user.getBalance().add(totalValue));
+        userRepository.save(user);
 
         BigDecimal remainingShares = holding.getShares().subtract(shares);
         if (remainingShares.compareTo(BigDecimal.ZERO) == 0) {
