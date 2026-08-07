@@ -1,6 +1,7 @@
 package com.papertrading.controller;
 
 import com.papertrading.dto.CreateLimitOrderRequest;
+import com.papertrading.dto.PaginatedResponse;
 import com.papertrading.dto.PendingOrderDTO;
 import com.papertrading.model.User;
 import com.papertrading.service.OrderService;
@@ -25,17 +26,43 @@ public class OrderController {
     }
 
     @GetMapping
-    public ResponseEntity<List<PendingOrderDTO>> getOrders(Authentication auth) {
+    public ResponseEntity<PaginatedResponse<PendingOrderDTO>> getOrders(
+            Authentication auth,
+            @RequestParam(defaultValue = "0") int offset,
+            @RequestParam(defaultValue = "20") int limit) {
+        if (limit < 1 || limit > 100) limit = 20;
+        if (offset < 0) offset = 0;
+
         User user = userService.getCurrentUser(auth);
-        List<PendingOrderDTO> orders = orderService.getAllOrders(user);
-        return ResponseEntity.ok(orders);
+        List<PendingOrderDTO> allOrders = orderService.getAllOrders(user);
+
+        int total = allOrders.size();
+        List<PendingOrderDTO> paged = allOrders.stream()
+                .skip(offset)
+                .limit(limit)
+                .toList();
+
+        return ResponseEntity.ok(new PaginatedResponse<>(paged, offset, limit, total));
     }
 
     @GetMapping("/pending")
-    public ResponseEntity<List<PendingOrderDTO>> getPendingOrders(Authentication auth) {
+    public ResponseEntity<PaginatedResponse<PendingOrderDTO>> getPendingOrders(
+            Authentication auth,
+            @RequestParam(defaultValue = "0") int offset,
+            @RequestParam(defaultValue = "20") int limit) {
+        if (limit < 1 || limit > 100) limit = 20;
+        if (offset < 0) offset = 0;
+
         User user = userService.getCurrentUser(auth);
-        List<PendingOrderDTO> orders = orderService.getPendingOrders(user);
-        return ResponseEntity.ok(orders);
+        List<PendingOrderDTO> allOrders = orderService.getPendingOrders(user);
+
+        int total = allOrders.size();
+        List<PendingOrderDTO> paged = allOrders.stream()
+                .skip(offset)
+                .limit(limit)
+                .toList();
+
+        return ResponseEntity.ok(new PaginatedResponse<>(paged, offset, limit, total));
     }
 
     @PostMapping

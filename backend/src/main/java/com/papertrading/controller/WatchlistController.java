@@ -1,5 +1,6 @@
 package com.papertrading.controller;
 
+import com.papertrading.dto.PaginatedResponse;
 import com.papertrading.dto.WatchlistDTO;
 import com.papertrading.model.User;
 import com.papertrading.service.WatchlistService;
@@ -26,10 +27,23 @@ public class WatchlistController {
     }
 
     @GetMapping
-    public ResponseEntity<List<WatchlistDTO>> getWatchlist(Authentication auth) {
+    public ResponseEntity<PaginatedResponse<WatchlistDTO>> getWatchlist(
+            Authentication auth,
+            @RequestParam(defaultValue = "0") int offset,
+            @RequestParam(defaultValue = "50") int limit) {
+        if (limit < 1 || limit > 100) limit = 50;
+        if (offset < 0) offset = 0;
+
         User user = userService.getCurrentUser(auth);
-        List<WatchlistDTO> watchlist = watchlistService.getWatchlist(user);
-        return ResponseEntity.ok(watchlist);
+        List<WatchlistDTO> allWatchlist = watchlistService.getWatchlist(user);
+
+        int total = allWatchlist.size();
+        List<WatchlistDTO> paged = allWatchlist.stream()
+                .skip(offset)
+                .limit(limit)
+                .toList();
+
+        return ResponseEntity.ok(new PaginatedResponse<>(paged, offset, limit, total));
     }
 
     @PostMapping
