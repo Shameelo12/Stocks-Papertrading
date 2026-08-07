@@ -53,42 +53,47 @@ export default function Navbar({ onMenuClick }) {
   };
 
   return (
-    <AppBar position="sticky" elevation={0}>
-      <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', paddingX: 3 }}>
+    <AppBar position="sticky" elevation={0} sx={{ borderBottom: '1px solid', borderBottomColor: 'divider' }}>
+      <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', paddingX: { xs: 2, md: 4 }, height: 64 }}>
         {/* Left Section - Logo & Menu */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0 }}>
           <Tooltip title="Toggle sidebar">
             <IconButton
               color="inherit"
               onClick={onMenuClick}
-              sx={{ display: { xs: 'flex', md: 'none' } }}
+              sx={{ display: { xs: 'flex', md: 'none' }, mr: 1 }}
             >
               <MenuIcon />
             </IconButton>
           </Tooltip>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
+          <Box
+            sx={{ display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer', transition: 'opacity 0.2s' }}
+            onClick={() => navigate('/dashboard')}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+          >
             <Box
               sx={{
-                width: 40,
-                height: 40,
-                background: 'linear-gradient(135deg, #05a854 0%, #0d8f47 100%)',
+                width: 36,
+                height: 36,
+                background: '#05a854',
                 borderRadius: '8px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: 'white',
-                fontWeight: 700,
-                fontSize: '1.2rem',
+                fontWeight: 600,
+                fontSize: '1rem',
               }}
             >
               PT
             </Box>
             <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: '0.5px' }}>
+              <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '0.95rem', lineHeight: 1.2 }}>
                 Paper Trading
               </Typography>
-              <Typography variant="caption" sx={{ display: 'block', opacity: 0.7 }}>
+              <Typography variant="caption" sx={{ display: 'block', opacity: 0.6, fontSize: '0.7rem' }}>
                 Brokerage
               </Typography>
             </Box>
@@ -96,22 +101,23 @@ export default function Navbar({ onMenuClick }) {
         </Box>
 
         {/* Center Section - Search */}
-        <Box sx={{ flex: 1, justifyContent: 'center', marginX: 2, display: { xs: 'none', md: 'flex' } }}>
+        <Box sx={{ flex: 1, justifyContent: 'center', marginX: 3, display: { xs: 'none', md: 'flex' } }}>
           <TextField
-            placeholder="Search stocks..."
+            placeholder="Search stocks, symbols..."
             variant="outlined"
             size="small"
             sx={{
-              width: '300px',
+              width: '100%',
+              maxWidth: '320px',
               '& .MuiOutlinedInput-root': {
-                borderRadius: '8px',
-                backgroundColor: 'rgba(0,0,0,0.05)',
+                borderRadius: '6px',
+                fontSize: '0.9rem',
               },
             }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon sx={{ opacity: 0.5 }} />
+                  <SearchIcon sx={{ opacity: 0.4, fontSize: '1.2rem' }} />
                 </InputAdornment>
               ),
             }}
@@ -119,51 +125,70 @@ export default function Navbar({ onMenuClick }) {
         </Box>
 
         {/* Right Section - Portfolio Value, Theme Toggle & Account */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          {/* Portfolio Value Chip */}
-          <Chip
-            label={`Portfolio: $${portfolio?.totalPortfolioValue?.toFixed(2) || '0.00'}`}
-            variant="outlined"
-            size="small"
-            sx={{
-              display: { xs: 'none', md: 'flex' },
-              borderColor: '#05a854',
-              color: '#05a854',
-              fontWeight: 600,
-            }}
-          />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {/* Portfolio Value */}
+          <Box sx={{ display: { xs: 'none', lg: 'block' }, textAlign: 'right', mr: 2 }}>
+            <Typography variant="caption" sx={{ opacity: 0.7, display: 'block' }}>
+              Portfolio Value
+            </Typography>
+            <Typography sx={{ fontWeight: 600, color: '#05a854', fontSize: '1rem' }}>
+              ${portfolio?.totalPortfolioValue?.toFixed(2) || '0.00'}
+            </Typography>
+          </Box>
 
           {/* Refresh Button */}
           <Tooltip title="Refresh portfolio">
-            <IconButton onClick={refetch} color="inherit" size="small" sx={{ opacity: 0.7 }}>
+            <IconButton
+              onClick={refetch}
+              color="inherit"
+              size="small"
+              sx={{
+                '&:hover': { backgroundColor: 'rgba(5, 168, 84, 0.1)' }
+              }}
+            >
               <RefreshIcon fontSize="small" />
             </IconButton>
           </Tooltip>
 
           {/* Theme Toggle */}
           <Tooltip title={isDark ? 'Light mode' : 'Dark mode'}>
-            <IconButton onClick={toggleTheme} color="inherit" size="small">
-              {isDark ? <LightModeIcon /> : <DarkModeIcon />}
+            <IconButton
+              onClick={toggleTheme}
+              color="inherit"
+              size="small"
+              sx={{
+                '&:hover': { backgroundColor: 'rgba(5, 168, 84, 0.1)' }
+              }}
+            >
+              {isDark ? <LightModeIcon fontSize="small" /> : <DarkModeIcon fontSize="small" />}
             </IconButton>
           </Tooltip>
 
-          <Box sx={{ display: { xs: 'none', sm: 'block' }, marginX: 1 }}>
-            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+          <Box sx={{ display: { xs: 'none', sm: 'block' }, marginX: 2, textAlign: 'right' }}>
+            <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.9rem' }}>
               {user?.email?.split('@')[0]}
             </Typography>
-            <Typography variant="caption" sx={{ opacity: 0.7 }}>
+            <Typography variant="caption" sx={{ opacity: 0.6, fontSize: '0.75rem' }}>
               Cash: ${portfolio?.currentBalance?.toFixed(2) || '0.00'}
             </Typography>
           </Box>
 
           <Tooltip title="Account menu">
-            <IconButton onClick={handleMenuOpen} size="small">
+            <IconButton
+              onClick={handleMenuOpen}
+              size="small"
+              sx={{
+                p: 0.5,
+                '&:hover': { backgroundColor: 'rgba(5, 168, 84, 0.1)' }
+              }}
+            >
               <Avatar
                 sx={{
                   width: 36,
                   height: 36,
-                  background: 'linear-gradient(135deg, #05a854 0%, #0d8f47 100%)',
-                  fontWeight: 700,
+                  background: '#05a854',
+                  fontWeight: 600,
+                  fontSize: '0.95rem',
                 }}
               >
                 {user?.email?.[0]?.toUpperCase()}
