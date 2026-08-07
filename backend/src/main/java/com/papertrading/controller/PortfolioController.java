@@ -4,8 +4,8 @@ import com.papertrading.dto.PortfolioHistoryDTO;
 import com.papertrading.dto.PortfolioResponse;
 import com.papertrading.dto.TransactionDTO;
 import com.papertrading.model.User;
-import com.papertrading.repository.UserRepository;
 import com.papertrading.service.PortfolioService;
+import com.papertrading.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,39 +19,30 @@ import java.util.List;
 public class PortfolioController {
 
     private final PortfolioService portfolioService;
-    private final UserRepository userRepository;
+    private final UserService userService;
 
-    public PortfolioController(PortfolioService portfolioService, UserRepository userRepository) {
+    public PortfolioController(PortfolioService portfolioService, UserService userService) {
         this.portfolioService = portfolioService;
-        this.userRepository = userRepository;
+        this.userService = userService;
     }
 
     @GetMapping
     public ResponseEntity<PortfolioResponse> getPortfolio(Authentication auth) {
-        String userId = auth.getName();
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
+        User user = userService.getCurrentUser(auth);
         PortfolioResponse portfolio = portfolioService.getPortfolio(user);
         return ResponseEntity.ok(portfolio);
     }
 
     @GetMapping("/transactions")
     public ResponseEntity<List<TransactionDTO>> getTransactions(Authentication auth) {
-        String userId = auth.getName();
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
+        User user = userService.getCurrentUser(auth);
         List<TransactionDTO> transactions = portfolioService.getTransactionHistory(user);
         return ResponseEntity.ok(transactions);
     }
 
     @GetMapping("/history")
     public ResponseEntity<List<PortfolioHistoryDTO>> getPortfolioHistory(Authentication auth) {
-        String userId = auth.getName();
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
+        User user = userService.getCurrentUser(auth);
         List<PortfolioHistoryDTO> history = portfolioService.getPortfolioHistory(user);
         return ResponseEntity.ok(history);
     }
