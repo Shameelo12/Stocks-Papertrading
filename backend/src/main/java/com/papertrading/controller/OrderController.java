@@ -3,8 +3,9 @@ package com.papertrading.controller;
 import com.papertrading.dto.CreateLimitOrderRequest;
 import com.papertrading.dto.PendingOrderDTO;
 import com.papertrading.model.User;
-import com.papertrading.repository.UserRepository;
 import com.papertrading.service.OrderService;
+import com.papertrading.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -16,38 +17,30 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
-    private final UserRepository userRepository;
+    private final UserService userService;
 
-    public OrderController(OrderService orderService, UserRepository userRepository) {
+    public OrderController(OrderService orderService, UserService userService) {
         this.orderService = orderService;
-        this.userRepository = userRepository;
+        this.userService = userService;
     }
 
     @GetMapping
     public ResponseEntity<List<PendingOrderDTO>> getOrders(Authentication auth) {
-        String userId = auth.getName();
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
+        User user = userService.getCurrentUser(auth);
         List<PendingOrderDTO> orders = orderService.getAllOrders(user);
         return ResponseEntity.ok(orders);
     }
 
     @GetMapping("/pending")
     public ResponseEntity<List<PendingOrderDTO>> getPendingOrders(Authentication auth) {
-        String userId = auth.getName();
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
+        User user = userService.getCurrentUser(auth);
         List<PendingOrderDTO> orders = orderService.getPendingOrders(user);
         return ResponseEntity.ok(orders);
     }
 
     @PostMapping
-    public ResponseEntity<PendingOrderDTO> createLimitOrder(Authentication auth, @RequestBody CreateLimitOrderRequest request) {
-        String userId = auth.getName();
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+    public ResponseEntity<PendingOrderDTO> createLimitOrder(Authentication auth, @Valid @RequestBody CreateLimitOrderRequest request) {
+        User user = userService.getCurrentUser(auth);
 
         if (request.getTicker() == null || request.getTicker().isEmpty()) {
             throw new IllegalArgumentException("Ticker is required");
@@ -68,20 +61,14 @@ public class OrderController {
 
     @PostMapping("/check-pending")
     public ResponseEntity<Void> checkPendingOrders(Authentication auth) {
-        String userId = auth.getName();
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
+        User user = userService.getCurrentUser(auth);
         orderService.checkAndExecutePendingOrders(user);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{orderId}")
     public ResponseEntity<Void> cancelOrder(Authentication auth, @PathVariable String orderId) {
-        String userId = auth.getName();
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
+        User user = userService.getCurrentUser(auth);
         orderService.cancelOrder(user, orderId);
         return ResponseEntity.noContent().build();
     }

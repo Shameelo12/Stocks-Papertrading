@@ -2,8 +2,9 @@ package com.papertrading.controller;
 
 import com.papertrading.dto.WatchlistDTO;
 import com.papertrading.model.User;
-import com.papertrading.repository.UserRepository;
 import com.papertrading.service.WatchlistService;
+import com.papertrading.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -17,28 +18,23 @@ import java.util.Map;
 public class WatchlistController {
 
     private final WatchlistService watchlistService;
-    private final UserRepository userRepository;
+    private final UserService userService;
 
-    public WatchlistController(WatchlistService watchlistService, UserRepository userRepository) {
+    public WatchlistController(WatchlistService watchlistService, UserService userService) {
         this.watchlistService = watchlistService;
-        this.userRepository = userRepository;
+        this.userService = userService;
     }
 
     @GetMapping
     public ResponseEntity<List<WatchlistDTO>> getWatchlist(Authentication auth) {
-        String userId = auth.getName();
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
+        User user = userService.getCurrentUser(auth);
         List<WatchlistDTO> watchlist = watchlistService.getWatchlist(user);
         return ResponseEntity.ok(watchlist);
     }
 
     @PostMapping
-    public ResponseEntity<WatchlistDTO> addToWatchlist(Authentication auth, @RequestBody Map<String, String> request) {
-        String userId = auth.getName();
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+    public ResponseEntity<WatchlistDTO> addToWatchlist(Authentication auth, @Valid @RequestBody Map<String, String> request) {
+        User user = userService.getCurrentUser(auth);
 
         String ticker = request.get("ticker");
         if (ticker == null || ticker.isEmpty()) {
@@ -54,9 +50,7 @@ public class WatchlistController {
             Authentication auth,
             @PathVariable String watchlistId,
             @RequestBody Map<String, Object> request) {
-        String userId = auth.getName();
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        User user = userService.getCurrentUser(auth);
 
         String notes = (String) request.get("notes");
         BigDecimal targetPrice = null;
@@ -70,10 +64,7 @@ public class WatchlistController {
 
     @DeleteMapping("/{watchlistId}")
     public ResponseEntity<Void> removeFromWatchlist(Authentication auth, @PathVariable String watchlistId) {
-        String userId = auth.getName();
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
+        User user = userService.getCurrentUser(auth);
         watchlistService.removeFromWatchlist(user, watchlistId);
         return ResponseEntity.noContent().build();
     }
