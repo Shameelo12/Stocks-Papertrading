@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Container, Typography, Button } from '@mui/material';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 
 export class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -39,7 +39,7 @@ export class ErrorBoundary extends React.Component {
               gap: 3,
             }}
           >
-            <ErrorOutlineIcon sx={{ fontSize: 80, color: 'error.main' }} />
+            <WarningAmberIcon sx={{ fontSize: 80, color: 'error.main' }} />
             <Typography variant="h4" sx={{ fontWeight: 700 }}>
               Oops! Something went wrong
             </Typography>
