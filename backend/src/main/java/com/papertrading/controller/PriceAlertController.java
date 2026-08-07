@@ -1,6 +1,7 @@
 package com.papertrading.controller;
 
 import com.papertrading.dto.CreatePriceAlertRequest;
+import com.papertrading.dto.PaginatedResponse;
 import com.papertrading.dto.PriceAlertDTO;
 import com.papertrading.model.User;
 import com.papertrading.service.PriceAlertService;
@@ -25,10 +26,23 @@ public class PriceAlertController {
     }
 
     @GetMapping
-    public ResponseEntity<List<PriceAlertDTO>> getAlerts(Authentication auth) {
+    public ResponseEntity<PaginatedResponse<PriceAlertDTO>> getAlerts(
+            Authentication auth,
+            @RequestParam(defaultValue = "0") int offset,
+            @RequestParam(defaultValue = "20") int limit) {
+        if (limit < 1 || limit > 100) limit = 20;
+        if (offset < 0) offset = 0;
+
         User user = userService.getCurrentUser(auth);
-        List<PriceAlertDTO> alerts = alertService.getAllAlerts(user);
-        return ResponseEntity.ok(alerts);
+        List<PriceAlertDTO> allAlerts = alertService.getAllAlerts(user);
+
+        int total = allAlerts.size();
+        List<PriceAlertDTO> paged = allAlerts.stream()
+                .skip(offset)
+                .limit(limit)
+                .toList();
+
+        return ResponseEntity.ok(new PaginatedResponse<>(paged, offset, limit, total));
     }
 
     @PostMapping

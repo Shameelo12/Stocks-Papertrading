@@ -89,33 +89,31 @@ public class PortfolioService {
         Map<LocalDateTime, PortfolioHistoryDTO> dailyHistory = new TreeMap<>();
         BigDecimal initialBalance = new BigDecimal("10000.00");
 
+        BigDecimal runningBalance = initialBalance;
+        Map<String, BigDecimal> cumulativeHoldings = new HashMap<>();
+
         for (Transaction tx : transactions) {
             LocalDateTime dayKey = tx.getTimestamp().truncatedTo(ChronoUnit.DAYS);
 
-            BigDecimal dayBalance = initialBalance;
-            Map<String, BigDecimal> holdings = new HashMap<>();
+            if (tx.getType() == Transaction.Type.BUY) {
+                runningBalance = runningBalance.subtract(tx.getTotalValue());
+                cumulativeHoldings.merge(tx.getTicker(), tx.getShares(), BigDecimal::add);
+            } else {
+                runningBalance = runningBalance.add(tx.getTotalValue());
+                cumulativeHoldings.merge(tx.getTicker(), tx.getShares().negate(), BigDecimal::add);
+            }
 
-            for (Transaction t : transactions) {
-                if (!t.getTimestamp().isBefore(dayKey.plusDays(1))) break;
-
-                if (t.getType() == Transaction.Type.BUY) {
-                    dayBalance = dayBalance.subtract(t.getTotalValue());
-                    holdings.merge(t.getTicker(), t.getShares(), BigDecimal::add);
-                } else {
-                    dayBalance = dayBalance.add(t.getTotalValue());
-                    holdings.merge(t.getTicker(), t.getShares().negate(), BigDecimal::add);
+            if (!dailyHistory.containsKey(dayKey)) {
+                BigDecimal investedValue = BigDecimal.ZERO;
+                for (Map.Entry<String, BigDecimal> holding : cumulativeHoldings.entrySet()) {
+                    Optional<BigDecimal> priceOpt = alphaVantageService.getCurrentPrice(holding.getKey());
+                    BigDecimal price = priceOpt.orElse(BigDecimal.ZERO);
+                    investedValue = investedValue.add(price.multiply(holding.getValue()));
                 }
-            }
 
-            BigDecimal investedValue = BigDecimal.ZERO;
-            for (Map.Entry<String, BigDecimal> holding : holdings.entrySet()) {
-                Optional<BigDecimal> priceOpt = alphaVantageService.getCurrentPrice(holding.getKey());
-                BigDecimal price = priceOpt.orElse(BigDecimal.ZERO);
-                investedValue = investedValue.add(price.multiply(holding.getValue()));
+                BigDecimal portfolioValue = runningBalance.add(investedValue);
+                dailyHistory.put(dayKey, new PortfolioHistoryDTO(dayKey, portfolioValue, runningBalance, investedValue));
             }
-
-            BigDecimal portfolioValue = dayBalance.add(investedValue);
-            dailyHistory.put(dayKey, new PortfolioHistoryDTO(dayKey, portfolioValue, dayBalance, investedValue));
         }
 
         List<PortfolioHistoryDTO> history = new ArrayList<>(dailyHistory.values());
