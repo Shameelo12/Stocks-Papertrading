@@ -20,6 +20,9 @@
 
     <properties>
         <java.version>17</java.version>
+        <!-- Default so surefire's @{argLine} still resolves when the JaCoCo
+             agent has not run (e.g. -Djacoco.skip=true). -->
+        <argLine></argLine>
     </properties>
 
     <dependencies>
@@ -130,13 +133,34 @@
                 </configuration>
             </plugin>
             <!-- Mockito's inline mock maker needs ByteBuddy experimental support
-                 to instrument classes on JDKs newer than its supported range. -->
+                 to instrument classes on JDKs newer than its supported range.
+                 @{argLine} carries in JaCoCo's agent, which binds that property. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <argLine>-Dnet.bytebuddy.experimental=true</argLine>
+                    <argLine>@{argLine} -Dnet.bytebuddy.experimental=true</argLine>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.12</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
