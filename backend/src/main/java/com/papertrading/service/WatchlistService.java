@@ -5,6 +5,7 @@ import com.papertrading.model.Watchlist;
 import com.papertrading.model.User;
 import com.papertrading.repository.WatchlistRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -59,6 +60,7 @@ public class WatchlistService {
         return toWatchlistDTO(watchlist);
     }
 
+    @Transactional
     public void removeFromWatchlist(User user, String watchlistId) {
         watchlistRepository.deleteByIdAndUser(watchlistId, user);
     }

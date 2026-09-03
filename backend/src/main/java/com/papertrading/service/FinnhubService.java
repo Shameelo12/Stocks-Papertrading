@@ -47,7 +47,19 @@ public class FinnhubService {
             JsonNode root = objectMapper.readTree(response);
 
             if (root.has("c") && !root.get("c").isNull()) {
-                BigDecimal price = new BigDecimal(root.get("c").asDouble());
+                // Parse from the raw JSON text, not asDouble(). new BigDecimal(double)
+                // captures the exact binary value of the float — 234.80 becomes
+                // 234.80000000000001136868377216160297393798828125 — and that error
+                // then multiplies through every share-count calculation.
+                BigDecimal price = new BigDecimal(root.get("c").asText());
+
+                // Finnhub returns c=0 for symbols it does not recognise. Treating that
+                // as a real quote would let a user "buy" an unknown ticker for nothing.
+                if (price.signum() <= 0) {
+                    logger.warn("Finnhub returned a non-positive price for ticker: {}", ticker);
+                    return Optional.empty();
+                }
+
                 logger.info("Fetched price for {} from Finnhub: {}", ticker, price);
                 return Optional.of(price);
             }

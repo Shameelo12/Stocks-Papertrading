@@ -29,7 +29,7 @@ import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
 import StarIcon from '@mui/icons-material/Star';
 import NotificationsIcon from '@mui/icons-material/Notifications';
-import API from '../api/axios';
+import API, { unwrapList } from '../api/axios';
 
 export default function Watchlist() {
   const [watchlist, setWatchlist] = useState([]);
@@ -74,7 +74,7 @@ export default function Watchlist() {
   const fetchWatchlist = async () => {
     try {
       const response = await API.get('/watchlist');
-      setWatchlist(response.data);
+      setWatchlist(unwrapList(response.data));
     } catch (err) {
       setError('Failed to fetch watchlist');
       console.error(err);
@@ -130,7 +130,7 @@ export default function Watchlist() {
   const fetchAlerts = async () => {
     try {
       const response = await API.get('/price-alerts');
-      setAlerts(response.data);
+      setAlerts(unwrapList(response.data));
     } catch (err) {
       console.error('Failed to fetch alerts:', err);
     }

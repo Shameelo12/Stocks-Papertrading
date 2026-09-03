@@ -17,7 +17,7 @@ import {
   Chip,
 } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
-import API from '../api/axios';
+import API, { unwrapList } from '../api/axios';
 
 export default function History() {
   const { user } = useAuth();
@@ -34,7 +34,7 @@ export default function History() {
     setError('');
     try {
       const response = await API.get('/portfolio/transactions');
-      setTransactions(response.data);
+      setTransactions(unwrapList(response.data));
     } catch (err) {
       setError('Failed to load transaction history');
     } finally {
