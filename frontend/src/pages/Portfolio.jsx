@@ -21,7 +21,7 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { usePortfolio } from '../hooks/usePortfolio';
-import API from '../api/axios';
+import API, { unwrapList } from '../api/axios';
 import StockDetailsModal from '../components/StockDetailsModal';
 
 const COLORS = ['#05a854', '#1f3a5f', '#ff6b35', '#f7931e', '#2196f3', '#9c27b0', '#e91e63', '#009688'];
@@ -37,7 +37,7 @@ export default function Portfolio() {
     const fetchHistory = async () => {
       try {
         const response = await API.get('/portfolio/history');
-        const formattedData = response.data.map(item => ({
+        const formattedData = unwrapList(response.data).map(item => ({
           timestamp: new Date(item.timestamp).toLocaleDateString(),
           portfolioValue: parseFloat(item.portfolioValue),
           balance: parseFloat(item.balance),

@@ -20,7 +20,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import API from '../api/axios';
+import API, { unwrapList } from '../api/axios';
 
 export default function StockDetailsModal({ open, ticker, onClose }) {
   const [holding, setHolding] = useState(null);
@@ -41,7 +41,7 @@ export default function StockDetailsModal({ open, ticker, onClose }) {
         const currentHolding = portfolio.holdings.find(h => h.ticker === ticker);
         setHolding(currentHolding);
 
-        const stockTransactions = historyRes.data.filter(tx => tx.ticker === ticker);
+        const stockTransactions = unwrapList(historyRes.data).filter(tx => tx.ticker === ticker);
         setTransactions(stockTransactions);
       } catch (err) {
         console.error('Failed to fetch stock details:', err);

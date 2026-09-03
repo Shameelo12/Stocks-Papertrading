@@ -20,7 +20,7 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import { useAuth } from '../context/AuthContext';
 import { usePortfolio } from '../hooks/usePortfolio';
-import API from '../api/axios';
+import API, { unwrapList } from '../api/axios';
 
 export default function Trade() {
   const { user } = useAuth();
@@ -184,7 +184,7 @@ export default function Trade() {
   const fetchPendingOrders = async () => {
     try {
       const response = await API.get('/orders/pending');
-      setPendingOrders(response.data);
+      setPendingOrders(unwrapList(response.data));
     } catch (err) {
       console.error('Failed to fetch pending orders:', err);
     }

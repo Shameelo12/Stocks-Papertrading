@@ -6,15 +6,19 @@ import com.papertrading.dto.TradeRequest;
 import com.papertrading.model.PendingOrder;
 import com.papertrading.model.User;
 import com.papertrading.repository.PendingOrderRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
+    private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
 
     private final PendingOrderRepository orderRepository;
     private final TradeService tradeService;
@@ -64,8 +68,15 @@ public class OrderService {
 
         for (PendingOrder order : pendingOrders) {
             try {
-                BigDecimal currentPrice = alphaVantageService.getCurrentPrice(order.getTicker())
-                        .orElse(order.getLimitPrice());
+                // Skip rather than defaulting to the limit price. Defaulting made the
+                // comparison below trivially true, so a failed price lookup would
+                // execute the order at exactly its limit — filling on missing data.
+                Optional<BigDecimal> priceOpt = alphaVantageService.getCurrentPrice(order.getTicker());
+                if (priceOpt.isEmpty()) {
+                    logger.warn("Skipping order {}: no price available for {}", order.getId(), order.getTicker());
+                    continue;
+                }
+                BigDecimal currentPrice = priceOpt.get();
 
                 boolean shouldExecute = false;
                 if (order.getType() == PendingOrder.OrderType.BUY && currentPrice.compareTo(order.getLimitPrice()) <= 0) {
@@ -78,8 +89,8 @@ public class OrderService {
                     executeOrder(order, currentPrice);
                 }
             } catch (Exception e) {
-                // Log error but continue with next order
-                System.err.println("Error processing order " + order.getId() + ": " + e.getMessage());
+                // Log and continue: one bad order must not stop the rest of the batch.
+                logger.error("Error processing order {}: {}", order.getId(), e.getMessage());
             }
         }
     }

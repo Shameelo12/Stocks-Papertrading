@@ -6,6 +6,7 @@ import com.papertrading.model.PriceAlert;
 import com.papertrading.model.User;
 import com.papertrading.repository.PriceAlertRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -40,6 +41,7 @@ public class PriceAlertService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public void deleteAlert(User user, String alertId) {
         alertRepository.deleteByIdAndUser(alertId, user);
     }
