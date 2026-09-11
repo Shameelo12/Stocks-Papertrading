@@ -8,8 +8,11 @@ import com.papertrading.model.User;
 import com.papertrading.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
 
 @Service
 public class AuthService {
@@ -18,11 +21,14 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final BigDecimal startingBalance;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil,
+                       @Value("${trading.starting-balance:10000.00}") BigDecimal startingBalance) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        this.startingBalance = startingBalance;
     }
 
     public AuthResponse register(RegisterRequest request) {
@@ -33,7 +39,7 @@ public class AuthService {
             }
 
             String passwordHash = passwordEncoder.encode(request.getPassword());
-            User user = new User(request.getEmail(), passwordHash);
+            User user = new User(request.getEmail(), passwordHash, startingBalance);
             user = userRepository.save(user);
             logger.info("User registered: {}", user.getId());
 

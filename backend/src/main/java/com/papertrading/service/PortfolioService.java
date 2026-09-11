@@ -51,10 +51,13 @@ public class PortfolioService {
             portfolioValue = portfolioValue.add(holding.getCurrentValue());
         }
 
+        BigDecimal baseline = startingBalanceOf(user);
         BigDecimal totalValue = user.getBalance().add(portfolioValue);
-        BigDecimal totalGainLoss = totalValue.subtract(new BigDecimal("10000"));
-        BigDecimal totalGainLossPercent = totalGainLoss.divide(new BigDecimal("10000"), 4, java.math.RoundingMode.HALF_UP)
-                .multiply(new BigDecimal("100"));
+        BigDecimal totalGainLoss = totalValue.subtract(baseline);
+        BigDecimal totalGainLossPercent = baseline.signum() == 0
+                ? BigDecimal.ZERO
+                : totalGainLoss.divide(baseline, 4, java.math.RoundingMode.HALF_UP)
+                        .multiply(new BigDecimal("100"));
 
         return new PortfolioResponse(
                 user.getBalance(),
@@ -77,9 +80,11 @@ public class PortfolioService {
     public List<PortfolioHistoryDTO> getPortfolioHistory(User user) {
         List<Transaction> allTransactions = transactionRepository.findByUserOrderByTimestampDesc(user);
 
+        BigDecimal initialBalance = startingBalanceOf(user);
+
         if (allTransactions.isEmpty()) {
             List<PortfolioHistoryDTO> history = new ArrayList<>();
-            history.add(new PortfolioHistoryDTO(LocalDateTime.now(), new BigDecimal("10000.00"), user.getBalance(), BigDecimal.ZERO));
+            history.add(new PortfolioHistoryDTO(LocalDateTime.now(), initialBalance, user.getBalance(), BigDecimal.ZERO));
             return history;
         }
 
@@ -87,7 +92,6 @@ public class PortfolioService {
         transactions.sort(Comparator.comparing(Transaction::getTimestamp));
 
         Map<LocalDateTime, PortfolioHistoryDTO> dailyHistory = new TreeMap<>();
-        BigDecimal initialBalance = new BigDecimal("10000.00");
 
         BigDecimal runningBalance = initialBalance;
         Map<String, BigDecimal> cumulativeHoldings = new HashMap<>();
@@ -119,9 +123,21 @@ public class PortfolioService {
         List<PortfolioHistoryDTO> history = new ArrayList<>(dailyHistory.values());
 
         if (history.isEmpty()) {
-            history.add(new PortfolioHistoryDTO(LocalDateTime.now(), new BigDecimal("10000.00"), user.getBalance(), BigDecimal.ZERO));
+            history.add(new PortfolioHistoryDTO(LocalDateTime.now(), initialBalance, user.getBalance(), BigDecimal.ZERO));
         }
 
         return history;
+    }
+
+    /**
+     * The baseline every performance figure is measured against.
+     *
+     * <p>Falls back to the default for accounts created before startingBalance
+     * existed, whose column is null after an ddl-auto schema update.
+     */
+    private BigDecimal startingBalanceOf(User user) {
+        return user.getStartingBalance() != null
+                ? user.getStartingBalance()
+                : User.DEFAULT_STARTING_BALANCE;
     }
 }

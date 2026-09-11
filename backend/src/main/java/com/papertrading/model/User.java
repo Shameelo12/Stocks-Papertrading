@@ -18,8 +18,22 @@ public class User {
     @Column(nullable = false)
     private String passwordHash;
 
+    /** Default opening cash for a new account, when none is configured. */
+    public static final BigDecimal DEFAULT_STARTING_BALANCE = new BigDecimal("10000.00");
+
     @Column(nullable = false)
     private BigDecimal balance;
+
+    /**
+     * What this account opened with, frozen at registration.
+     *
+     * <p>Performance was previously measured against a literal 10000 written into
+     * PortfolioService. That silently produces wrong numbers for any account that
+     * did not start with exactly that much, and it couples the reporting layer to
+     * a value that belongs to the account.
+     */
+    @Column(nullable = false, updatable = false)
+    private BigDecimal startingBalance;
 
     /**
      * Optimistic lock guard on the cash balance.
@@ -44,13 +58,20 @@ public class User {
     public User() {
         this.id = UUID.randomUUID().toString();
         this.createdAt = LocalDateTime.now();
-        this.balance = new BigDecimal("10000.00");
+        this.balance = DEFAULT_STARTING_BALANCE;
+        this.startingBalance = DEFAULT_STARTING_BALANCE;
     }
 
     public User(String email, String passwordHash) {
         this();
         this.email = email;
         this.passwordHash = passwordHash;
+    }
+
+    public User(String email, String passwordHash, BigDecimal startingBalance) {
+        this(email, passwordHash);
+        this.balance = startingBalance;
+        this.startingBalance = startingBalance;
     }
 
     public String getId() {
@@ -83,6 +104,14 @@ public class User {
 
     public void setBalance(BigDecimal balance) {
         this.balance = balance;
+    }
+
+    public BigDecimal getStartingBalance() {
+        return startingBalance;
+    }
+
+    public void setStartingBalance(BigDecimal startingBalance) {
+        this.startingBalance = startingBalance;
     }
 
     public Long getVersion() {
