@@ -74,7 +74,14 @@ public class OrderService {
      * to refresh the page.
      */
     public int checkAndExecuteAllPendingOrders() {
-        return processOrders(orderRepository.findByStatus(PendingOrder.OrderStatus.PENDING));
+        // findByStatusWithUser, not findByStatus: this runs outside any request, so
+        // the order's LAZY user proxy has no session to initialise against. See the
+        // repository method for the failure this avoids.
+        //
+        // Deliberately not @Transactional. Each fill runs in TradeService's own
+        // transaction, so one order failing cannot mark a shared transaction
+        // rollback-only and poison the rest of the sweep.
+        return processOrders(orderRepository.findByStatusWithUser(PendingOrder.OrderStatus.PENDING));
     }
 
     /**

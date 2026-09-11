@@ -186,19 +186,32 @@ class OrderServiceTest {
     @Test
     void sweepEvaluatesEveryUsersPendingOrders() {
         PendingOrder o = order(PendingOrder.OrderType.BUY, "150.00");
-        when(orderRepository.findByStatus(PendingOrder.OrderStatus.PENDING)).thenReturn(List.of(o));
+        when(orderRepository.findByStatusWithUser(PendingOrder.OrderStatus.PENDING)).thenReturn(List.of(o));
         when(priceService.getCurrentPrice("AAPL")).thenReturn(Optional.of(new BigDecimal("145.00")));
 
         assertEquals(1, orderService.checkAndExecuteAllPendingOrders());
 
         // The sweep must not be scoped to a single user.
-        verify(orderRepository).findByStatus(PendingOrder.OrderStatus.PENDING);
         verify(orderRepository, never()).findByUserAndStatus(any(), any());
     }
 
     @Test
+    void sweepLoadsOrdersWithTheirOwnerEagerly() {
+        when(orderRepository.findByStatusWithUser(PendingOrder.OrderStatus.PENDING)).thenReturn(List.of());
+
+        orderService.checkAndExecuteAllPendingOrders();
+
+        // Regression guard. The sweep runs outside any request, so a plain
+        // findByStatus leaves order.getUser() as an uninitialisable LAZY proxy and
+        // every fill dies with "could not initialize proxy [User] - no Session".
+        // Mocks cannot reproduce a real proxy, so this pins the query instead.
+        verify(orderRepository).findByStatusWithUser(PendingOrder.OrderStatus.PENDING);
+        verify(orderRepository, never()).findByStatus(any());
+    }
+
+    @Test
     void sweepWithNothingPendingDoesNoWork() {
-        when(orderRepository.findByStatus(PendingOrder.OrderStatus.PENDING)).thenReturn(List.of());
+        when(orderRepository.findByStatusWithUser(PendingOrder.OrderStatus.PENDING)).thenReturn(List.of());
 
         assertEquals(0, orderService.checkAndExecuteAllPendingOrders());
         verify(priceService, never()).getCurrentPrice(anyString());
