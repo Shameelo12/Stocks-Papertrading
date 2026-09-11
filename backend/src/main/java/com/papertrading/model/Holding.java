@@ -5,7 +5,17 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
-@Table(name = "holdings")
+@Table(
+        name = "holdings",
+        // A user holds exactly one position per ticker; TradeService relies on
+        // findByUserAndTicker returning at most one row. Nothing enforced that at
+        // the schema level, so a race between two first-time buys of the same
+        // ticker could create a duplicate and silently split the position.
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_holdings_user_ticker",
+                columnNames = {"user_id", "ticker"}
+        )
+)
 public class Holding {
 
     @Id

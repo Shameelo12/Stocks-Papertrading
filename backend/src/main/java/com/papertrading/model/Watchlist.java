@@ -6,7 +6,17 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "watchlist")
+@Table(
+        name = "watchlist",
+        // One row per user per ticker. Application code checks for an existing
+        // entry before inserting, but that check and the insert are not atomic,
+        // so two near-simultaneous adds could both pass it. The database is the
+        // only place this invariant can actually be enforced.
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_watchlist_user_ticker",
+                columnNames = {"user_id", "ticker"}
+        )
+)
 public class Watchlist {
 
     @Id
