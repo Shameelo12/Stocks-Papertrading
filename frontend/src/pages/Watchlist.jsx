@@ -209,41 +209,73 @@ export default function Watchlist() {
             </Grid>
           </Grid>
 
-          {/* Active Alerts */}
+          {/* Price alerts. The endpoint returns fired alerts alongside waiting
+              ones, so each row states which it is rather than implying all are
+              still active. */}
           {alerts.length > 0 && (
             <Box sx={{ marginTop: 3 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, marginBottom: 1 }}>
-                Active Alerts ({alerts.length})
+                Price Alerts ({alerts.filter((a) => a.active).length} waiting of {alerts.length})
               </Typography>
               <TableContainer>
                 <Table size="small">
-                  <TableHead sx={{ backgroundColor: 'rgba(0,0,0,0.03)' }}>
+                  <TableHead>
                     <TableRow>
                       <TableCell sx={{ fontWeight: 700 }}>Ticker</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 700 }}>Target Price</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 700 }}>Type</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 700 }}>Target</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 700 }}>Condition</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
                       <TableCell align="center" sx={{ fontWeight: 700 }}>Action</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {alerts.map((alert) => (
-                      <TableRow key={alert.id}>
+                      <TableRow
+                        key={alert.id}
+                        sx={{ opacity: alert.active ? 1 : 0.65 }}
+                      >
                         <TableCell sx={{ fontWeight: 600 }}>{alert.ticker}</TableCell>
-                        <TableCell align="right">${parseFloat(alert.targetPrice).toFixed(2)}</TableCell>
+                        <TableCell align="right" sx={{ fontVariantNumeric: 'tabular-nums' }}>
+                          ${parseFloat(alert.targetPrice).toFixed(2)}
+                        </TableCell>
                         <TableCell align="center">
                           <Chip
-                            label={alert.type}
+                            label={alert.type === 'ABOVE' ? 'at or above' : 'at or below'}
                             size="small"
-                            sx={{
-                              backgroundColor: alert.type === 'ABOVE' ? 'rgba(5, 168, 84, 0.2)' : 'rgba(33, 150, 243, 0.2)',
-                              color: alert.type === 'ABOVE' ? '#05a854' : '#2196f3',
-                            }}
+                            variant="outlined"
                           />
+                        </TableCell>
+                        <TableCell>
+                          {alert.active ? (
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                              Waiting
+                            </Typography>
+                          ) : (
+                            <Box>
+                              <Typography
+                                variant="caption"
+                                sx={{ color: 'success.main', fontWeight: 600, display: 'block' }}
+                              >
+                                Triggered
+                              </Typography>
+                              {alert.triggeredAt && (
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                  {new Date(alert.triggeredAt).toLocaleString(undefined, {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                  })}
+                                </Typography>
+                              )}
+                            </Box>
+                          )}
                         </TableCell>
                         <TableCell align="center">
                           <IconButton
                             size="small"
                             onClick={() => handleDeleteAlert(alert.id)}
+                            aria-label={`Delete ${alert.ticker} alert`}
                             sx={{ color: 'error.main' }}
                           >
                             <DeleteIcon fontSize="small" />
