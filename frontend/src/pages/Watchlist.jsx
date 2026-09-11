@@ -341,7 +341,7 @@ export default function Watchlist() {
             </Box>
             <TableContainer>
               <Table>
-                <TableHead sx={{ backgroundColor: 'rgba(0,0,0,0.03)' }}>
+                <TableHead sx={{ backgroundColor: 'action.hover' }}>
                   <TableRow>
                     <TableCell sx={{ fontWeight: 700 }}>Ticker</TableCell>
                     <TableCell align="right" sx={{ fontWeight: 700 }}>Price</TableCell>

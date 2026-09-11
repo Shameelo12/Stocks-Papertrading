@@ -7,22 +7,54 @@ import {
   Button,
   Box,
   Typography,
-  Grid,
-  Card,
-  CardContent,
-  Chip,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
+  Divider,
   CircularProgress,
+  useTheme,
 } from '@mui/material';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import API, { unwrapList } from '../api/axios';
+import { currency, currencyAbs, percentAbs, shares as fmtShares } from '../utils/format';
+
+/**
+ * The transactions endpoint is paginated and has no per-ticker filter, so this
+ * pulls the largest page the API allows and filters client-side. For an account
+ * with more than this many trades the older ones for a given stock will not
+ * appear; a dedicated /transactions?ticker= filter is the real fix.
+ */
+const TRANSACTION_FETCH_LIMIT = 100;
+
+function Metric({ label, value, tone }) {
+  const theme = useTheme();
+  const color =
+    tone === 'up' ? theme.palette.success.main
+    : tone === 'down' ? theme.palette.error.main
+    : 'text.primary';
+
+  return (
+    <Box>
+      <Typography
+        variant="caption"
+        sx={{
+          color: 'text.secondary',
+          textTransform: 'uppercase',
+          letterSpacing: '0.06em',
+          fontSize: '0.68rem',
+          display: 'block',
+          mb: 0.5,
+        }}
+      >
+        {label}
+      </Typography>
+      <Typography sx={{ fontSize: '1.15rem', fontWeight: 600, color, fontVariantNumeric: 'tabular-nums' }}>
+        {value}
+      </Typography>
+    </Box>
+  );
+}
 
 export default function StockDetailsModal({ open, ticker, onClose }) {
+  const theme = useTheme();
   const [holding, setHolding] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,156 +62,123 @@ export default function StockDetailsModal({ open, ticker, onClose }) {
   useEffect(() => {
     if (!open || !ticker) return;
 
-    const fetchData = async () => {
-      try {
-        const [portfolioRes, historyRes] = await Promise.all([
-          API.get('/portfolio'),
-          API.get('/portfolio/transactions'),
-        ]);
+    // Reset before fetching. Without this, reopening the dialog for a different
+    // ticker showed the previous stock's figures until the new request landed,
+    // because loading was never set back to true.
+    setLoading(true);
+    setHolding(null);
+    setTransactions([]);
 
-        const portfolio = portfolioRes.data;
-        const currentHolding = portfolio.holdings.find(h => h.ticker === ticker);
-        setHolding(currentHolding);
+    let cancelled = false;
+    Promise.all([
+      API.get('/portfolio'),
+      API.get('/portfolio/transactions', { params: { offset: 0, limit: TRANSACTION_FETCH_LIMIT } }),
+    ])
+      .then(([portfolioRes, txRes]) => {
+        if (cancelled) return;
+        setHolding(portfolioRes.data.holdings?.find((h) => h.ticker === ticker) ?? null);
+        setTransactions(unwrapList(txRes.data).filter((tx) => tx.ticker === ticker));
+      })
+      .catch(() => { /* the dialog renders its empty state */ })
+      .finally(() => !cancelled && setLoading(false));
 
-        const stockTransactions = unwrapList(historyRes.data).filter(tx => tx.ticker === ticker);
-        setTransactions(stockTransactions);
-      } catch (err) {
-        console.error('Failed to fetch stock details:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    return () => { cancelled = true; };
   }, [open, ticker]);
 
   if (!open) return null;
 
+  const gain = Number(holding?.gainLoss ?? 0);
+  const up = gain >= 0;
+  const tone = up ? theme.palette.success.main : theme.palette.error.main;
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle sx={{ fontWeight: 700, fontSize: '1.3rem' }}>
-        {ticker} - Stock Details
-      </DialogTitle>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle sx={{ fontWeight: 600, fontSize: '1.2rem', pb: 1 }}>{ticker}</DialogTitle>
 
-      <DialogContent sx={{ paddingTop: 2 }}>
+      <DialogContent>
         {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', padding: 4 }}>
-            <CircularProgress sx={{ color: '#05a854' }} />
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+            <CircularProgress size={28} />
           </Box>
-        ) : holding ? (
+        ) : !holding ? (
+          <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center', py: 5 }}>
+            You don't hold any {ticker}.
+          </Typography>
+        ) : (
           <Box>
-            {/* Key Metrics */}
-            <Grid container spacing={2} sx={{ marginBottom: 4 }}>
-              <Grid item xs={12} sm={6}>
-                <Card elevation={0} sx={{ background: 'linear-gradient(135deg, #05a854 0%, #0d8f47 100%)', color: 'white', borderRadius: '12px' }}>
-                  <CardContent>
-                    <Typography variant="body2" sx={{ opacity: 0.85 }}>
-                      Current Price
-                    </Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                      ${parseFloat(holding.currentPrice).toFixed(2)}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Card elevation={0} sx={{ background: 'linear-gradient(135deg, #1f3a5f 0%, #2a5298 100%)', color: 'white', borderRadius: '12px' }}>
-                  <CardContent>
-                    <Typography variant="body2" sx={{ opacity: 0.85 }}>
-                      Avg Cost
-                    </Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                      ${parseFloat(holding.avgCostPerShare).toFixed(2)}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Card elevation={0} sx={{ background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)', color: 'white', borderRadius: '12px' }}>
-                  <CardContent>
-                    <Typography variant="body2" sx={{ opacity: 0.85 }}>
-                      Total Shares
-                    </Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                      {parseFloat(holding.shares).toFixed(2)}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Card elevation={0} sx={{ background: holding.gainLoss >= 0 ? 'linear-gradient(135deg, #05a854 0%, #0d8f47 100%)' : 'linear-gradient(135deg, #d32f2f 0%, #c62828 100%)', color: 'white', borderRadius: '12px' }}>
-                  <CardContent>
-                    <Typography variant="body2" sx={{ opacity: 0.85 }}>
-                      Total P&L
-                    </Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                      ${parseFloat(holding.gainLoss).toFixed(2)}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            </Grid>
+            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5 }}>
+              <Typography sx={{ fontSize: '2rem', fontWeight: 600, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+                {currency(holding.currentPrice)}
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, color: tone }}>
+                {up ? <ArrowUpwardIcon sx={{ fontSize: '0.9rem' }} /> : <ArrowDownwardIcon sx={{ fontSize: '0.9rem' }} />}
+                <Typography sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                  {currencyAbs(gain)} ({percentAbs(holding.gainLossPercent)})
+                </Typography>
+              </Box>
+            </Box>
 
-            {/* Trading History */}
-            <Typography variant="h6" sx={{ fontWeight: 700, marginTop: 3, marginBottom: 2 }}>
-              Trading History
-            </Typography>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: 2.5,
+                mt: 3,
+                pt: 2.5,
+                borderTop: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
+              <Metric label="Shares" value={fmtShares(holding.shares)} />
+              <Metric label="Avg cost" value={currency(holding.avgCostPerShare)} />
+              <Metric label="Value" value={currency(holding.currentValue)} />
+            </Box>
+
+            <Typography sx={{ fontWeight: 600, mt: 4, mb: 1 }}>Your trades</Typography>
+            <Divider />
             {transactions.length > 0 ? (
-              <TableContainer>
-                <Table>
-                  <TableHead sx={{ backgroundColor: 'rgba(0,0,0,0.03)' }}>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 700 }}>Type</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 700 }}>Shares</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 700 }}>Price</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 700 }}>Total</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {transactions.map((tx) => (
-                      <TableRow key={tx.id} hover>
-                        <TableCell>
-                          {new Date(tx.timestamp).toLocaleDateString()} {new Date(tx.timestamp).toLocaleTimeString()}
-                        </TableCell>
-                        <TableCell align="right">
-                          <Chip
-                            label={tx.type}
-                            size="small"
-                            sx={{
-                              backgroundColor: tx.type === 'BUY' ? 'rgba(5, 168, 84, 0.2)' : 'rgba(211, 47, 47, 0.2)',
-                              color: tx.type === 'BUY' ? '#05a854' : '#d32f2f',
-                              fontWeight: 600,
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell align="right">{parseFloat(tx.shares).toFixed(2)}</TableCell>
-                        <TableCell align="right">${parseFloat(tx.priceAtTime).toFixed(2)}</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 600 }}>
-                          ${parseFloat(tx.totalValue).toFixed(2)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+              transactions.map((tx, i) => {
+                const isBuy = tx.type === 'BUY';
+                return (
+                  <React.Fragment key={tx.id}>
+                    {i > 0 && <Divider />}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, py: 1.5 }}>
+                      <Box>
+                        <Typography
+                          variant="body2"
+                          sx={{ fontWeight: 600, color: isBuy ? theme.palette.success.main : theme.palette.error.main }}
+                        >
+                          {isBuy ? 'Bought' : 'Sold'} {fmtShares(tx.shares)}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                          {new Date(tx.timestamp).toLocaleString(undefined, {
+                            month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+                          })}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ textAlign: 'right' }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                          {isBuy ? '-' : '+'}{currency(tx.totalValue)}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontVariantNumeric: 'tabular-nums' }}>
+                          @ {currency(tx.priceAtTime)}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </React.Fragment>
+                );
+              })
             ) : (
-              <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center', padding: 2 }}>
-                No trading history for this stock
+              <Typography variant="body2" sx={{ color: 'text.secondary', py: 2.5 }}>
+                No recorded trades for {ticker}.
               </Typography>
             )}
           </Box>
-        ) : (
-          <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center', padding: 4 }}>
-            You don't own this stock
-          </Typography>
         )}
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={onClose} sx={{ color: '#05a854', fontWeight: 600 }}>
-          Close
-        </Button>
+        <Button onClick={onClose}>Close</Button>
       </DialogActions>
     </Dialog>
   );
