@@ -22,7 +22,9 @@ public class PriceAlertService {
 
     public PriceAlertDTO createAlert(User user, CreatePriceAlertRequest request) {
         PriceAlert.AlertType type = PriceAlert.AlertType.valueOf(request.getType().toUpperCase());
-        PriceAlert alert = new PriceAlert(user, request.getTicker(), request.getTargetPrice(), type);
+        // Normalised on the way in so the evaluator can group alerts by ticker
+        // without "aapl" and "AAPL" splitting into separate price lookups.
+        PriceAlert alert = new PriceAlert(user, request.getTicker().toUpperCase(), request.getTargetPrice(), type);
         alertRepository.save(alert);
         return toPriceAlertDTO(alert);
     }
@@ -53,7 +55,8 @@ public class PriceAlertService {
                 alert.getTargetPrice(),
                 alert.getType().name(),
                 alert.isActive(),
-                alert.getCreatedAt()
+                alert.getCreatedAt(),
+                alert.getTriggeredAt()
         );
     }
 }

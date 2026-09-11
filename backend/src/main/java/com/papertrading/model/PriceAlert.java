@@ -30,8 +30,13 @@ public class PriceAlert {
     @Column(nullable = false)
     private AlertType type;
 
+    /** False once the alert has fired. A fired alert is kept for history, not deleted. */
     @Column(nullable = false)
     private boolean active = true;
+
+    /** When the price condition was met. Null while the alert is still waiting. */
+    @Column
+    private LocalDateTime triggeredAt;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
@@ -66,6 +71,21 @@ public class PriceAlert {
 
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
+
+    public LocalDateTime getTriggeredAt() { return triggeredAt; }
+    public void setTriggeredAt(LocalDateTime triggeredAt) { this.triggeredAt = triggeredAt; }
+
+    /**
+     * Whether {@code currentPrice} satisfies this alert's condition.
+     *
+     * <p>Lives on the entity because it is a property of the alert itself, and
+     * keeping it here means the rule is stated exactly once.
+     */
+    public boolean isTriggeredBy(BigDecimal currentPrice) {
+        return type == AlertType.ABOVE
+                ? currentPrice.compareTo(targetPrice) >= 0
+                : currentPrice.compareTo(targetPrice) <= 0;
+    }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

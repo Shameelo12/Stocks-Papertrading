@@ -10,14 +10,17 @@ public class PriceAlertDTO {
     private String type;
     private boolean active;
     private LocalDateTime createdAt;
+    private LocalDateTime triggeredAt;
 
-    public PriceAlertDTO(String id, String ticker, BigDecimal targetPrice, String type, boolean active, LocalDateTime createdAt) {
+    public PriceAlertDTO(String id, String ticker, BigDecimal targetPrice, String type, boolean active,
+                         LocalDateTime createdAt, LocalDateTime triggeredAt) {
         this.id = id;
         this.ticker = ticker;
         this.targetPrice = targetPrice;
         this.type = type;
         this.active = active;
         this.createdAt = createdAt;
+        this.triggeredAt = triggeredAt;
     }
 
     public String getId() { return id; }
@@ -37,4 +40,7 @@ public class PriceAlertDTO {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public LocalDateTime getTriggeredAt() { return triggeredAt; }
+    public void setTriggeredAt(LocalDateTime triggeredAt) { this.triggeredAt = triggeredAt; }
 }
