@@ -22,14 +22,14 @@ public class TradeService {
     private final HoldingRepository holdingRepository;
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
-    private final AlphaVantageService alphaVantageService;
+    private final PriceService priceService;
 
     public TradeService(HoldingRepository holdingRepository, TransactionRepository transactionRepository,
-                       UserRepository userRepository, AlphaVantageService alphaVantageService) {
+                       UserRepository userRepository, PriceService priceService) {
         this.holdingRepository = holdingRepository;
         this.transactionRepository = transactionRepository;
         this.userRepository = userRepository;
-        this.alphaVantageService = alphaVantageService;
+        this.priceService = priceService;
     }
 
     @Transactional
@@ -41,7 +41,7 @@ public class TradeService {
             throw new IllegalArgumentException("Shares must be greater than 0");
         }
 
-        Optional<BigDecimal> priceOpt = alphaVantageService.getCurrentPrice(ticker);
+        Optional<BigDecimal> priceOpt = priceService.getCurrentPrice(ticker);
         if (priceOpt.isEmpty()) {
             throw new IllegalArgumentException("Could not fetch price for ticker: " + ticker);
         }
@@ -103,7 +103,7 @@ public class TradeService {
             throw new IllegalArgumentException("Insufficient shares. You own: " + holding.getShares() + ", Trying to sell: " + shares);
         }
 
-        Optional<BigDecimal> priceOpt = alphaVantageService.getCurrentPrice(ticker);
+        Optional<BigDecimal> priceOpt = priceService.getCurrentPrice(ticker);
         if (priceOpt.isEmpty()) {
             throw new IllegalArgumentException("Could not fetch price for ticker: " + ticker);
         }

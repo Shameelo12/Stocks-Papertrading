@@ -33,7 +33,7 @@ class TradeServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private AlphaVantageService alphaVantageService;
+    private PriceService priceService;
 
     @InjectMocks
     private TradeService tradeService;
@@ -52,7 +52,7 @@ class TradeServiceTest {
 
     @Test
     void testBuySuccessNewHolding() {
-        when(alphaVantageService.getCurrentPrice("AAPL")).thenReturn(Optional.of(new BigDecimal("150.00")));
+        when(priceService.getCurrentPrice("AAPL")).thenReturn(Optional.of(new BigDecimal("150.00")));
         when(holdingRepository.findByUserAndTicker(testUser, "AAPL")).thenReturn(Optional.empty());
         when(holdingRepository.save(any(Holding.class))).thenReturn(new Holding(testUser, "AAPL", new BigDecimal("10"), new BigDecimal("150.00")));
         when(userRepository.save(testUser)).thenReturn(testUser);
@@ -68,14 +68,14 @@ class TradeServiceTest {
     @Test
     void testBuyInsufficientBalance() {
         testUser.setBalance(new BigDecimal("1000.00"));
-        when(alphaVantageService.getCurrentPrice("AAPL")).thenReturn(Optional.of(new BigDecimal("150.00")));
+        when(priceService.getCurrentPrice("AAPL")).thenReturn(Optional.of(new BigDecimal("150.00")));
 
         assertThrows(IllegalArgumentException.class, () -> tradeService.buy(testUser, buyRequest));
     }
 
     @Test
     void testBuyPriceUnavailable() {
-        when(alphaVantageService.getCurrentPrice("AAPL")).thenReturn(Optional.empty());
+        when(priceService.getCurrentPrice("AAPL")).thenReturn(Optional.empty());
 
         assertThrows(IllegalArgumentException.class, () -> tradeService.buy(testUser, buyRequest));
     }
@@ -93,7 +93,7 @@ class TradeServiceTest {
         TradeRequest sellRequest = new TradeRequest("AAPL", new BigDecimal("10"));
 
         when(holdingRepository.findByUserAndTicker(testUser, "AAPL")).thenReturn(Optional.of(holding));
-        when(alphaVantageService.getCurrentPrice("AAPL")).thenReturn(Optional.of(new BigDecimal("155.00")));
+        when(priceService.getCurrentPrice("AAPL")).thenReturn(Optional.of(new BigDecimal("155.00")));
         when(holdingRepository.save(any(Holding.class))).thenReturn(new Holding(testUser, "AAPL", new BigDecimal("10"), new BigDecimal("150.00")));
         when(userRepository.save(testUser)).thenReturn(testUser);
 

@@ -22,12 +22,12 @@ public class OrderService {
 
     private final PendingOrderRepository orderRepository;
     private final TradeService tradeService;
-    private final AlphaVantageService alphaVantageService;
+    private final PriceService priceService;
 
-    public OrderService(PendingOrderRepository orderRepository, TradeService tradeService, AlphaVantageService alphaVantageService) {
+    public OrderService(PendingOrderRepository orderRepository, TradeService tradeService, PriceService priceService) {
         this.orderRepository = orderRepository;
         this.tradeService = tradeService;
-        this.alphaVantageService = alphaVantageService;
+        this.priceService = priceService;
     }
 
     public PendingOrderDTO createLimitOrder(User user, CreateLimitOrderRequest request) {
@@ -71,7 +71,7 @@ public class OrderService {
                 // Skip rather than defaulting to the limit price. Defaulting made the
                 // comparison below trivially true, so a failed price lookup would
                 // execute the order at exactly its limit — filling on missing data.
-                Optional<BigDecimal> priceOpt = alphaVantageService.getCurrentPrice(order.getTicker());
+                Optional<BigDecimal> priceOpt = priceService.getCurrentPrice(order.getTicker());
                 if (priceOpt.isEmpty()) {
                     logger.warn("Skipping order {}: no price available for {}", order.getId(), order.getTicker());
                     continue;

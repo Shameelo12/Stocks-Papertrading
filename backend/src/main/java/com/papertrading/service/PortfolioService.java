@@ -22,14 +22,14 @@ public class PortfolioService {
 
     private final HoldingRepository holdingRepository;
     private final TransactionRepository transactionRepository;
-    private final AlphaVantageService alphaVantageService;
+    private final PriceService priceService;
 
     public PortfolioService(HoldingRepository holdingRepository,
                            TransactionRepository transactionRepository,
-                           AlphaVantageService alphaVantageService) {
+                           PriceService priceService) {
         this.holdingRepository = holdingRepository;
         this.transactionRepository = transactionRepository;
-        this.alphaVantageService = alphaVantageService;
+        this.priceService = priceService;
     }
 
     public PortfolioResponse getPortfolio(User user) {
@@ -39,7 +39,7 @@ public class PortfolioService {
         BigDecimal portfolioValue = BigDecimal.ZERO;
         List<HoldingDTO> holdingDTOs = holdings.stream()
                 .map(holding -> {
-                    Optional<BigDecimal> priceOpt = alphaVantageService.getCurrentPrice(holding.getTicker());
+                    Optional<BigDecimal> priceOpt = priceService.getCurrentPrice(holding.getTicker());
                     BigDecimal price = priceOpt.orElse(holding.getAvgCostPerShare());
                     return new HoldingDTO(holding.getTicker(), holding.getShares(),
                             holding.getAvgCostPerShare(), price);
@@ -106,7 +106,7 @@ public class PortfolioService {
             if (!dailyHistory.containsKey(dayKey)) {
                 BigDecimal investedValue = BigDecimal.ZERO;
                 for (Map.Entry<String, BigDecimal> holding : cumulativeHoldings.entrySet()) {
-                    Optional<BigDecimal> priceOpt = alphaVantageService.getCurrentPrice(holding.getKey());
+                    Optional<BigDecimal> priceOpt = priceService.getCurrentPrice(holding.getKey());
                     BigDecimal price = priceOpt.orElse(BigDecimal.ZERO);
                     investedValue = investedValue.add(price.multiply(holding.getValue()));
                 }

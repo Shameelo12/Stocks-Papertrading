@@ -8,12 +8,12 @@ import java.math.BigDecimal;
 import java.util.Optional;
 
 @Service
-public class AlphaVantageService {
-    private static final Logger logger = LoggerFactory.getLogger(AlphaVantageService.class);
+public class PriceService {
+    private static final Logger logger = LoggerFactory.getLogger(PriceService.class);
 
     private final FinnhubService finnhubService;
 
-    public AlphaVantageService(FinnhubService finnhubService) {
+    public PriceService(FinnhubService finnhubService) {
         this.finnhubService = finnhubService;
     }
 

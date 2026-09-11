@@ -17,14 +17,14 @@ public class AnalyticsService {
 
     private final HoldingRepository holdingRepository;
     private final TransactionRepository transactionRepository;
-    private final AlphaVantageService alphaVantageService;
+    private final PriceService priceService;
 
     public AnalyticsService(HoldingRepository holdingRepository,
                            TransactionRepository transactionRepository,
-                           AlphaVantageService alphaVantageService) {
+                           PriceService priceService) {
         this.holdingRepository = holdingRepository;
         this.transactionRepository = transactionRepository;
-        this.alphaVantageService = alphaVantageService;
+        this.priceService = priceService;
     }
 
     public TradeStatsDTO getTradeStats(User user) {
@@ -39,7 +39,7 @@ public class AnalyticsService {
         BigDecimal largestLoss = BigDecimal.ZERO;
 
         for (Holding holding : holdings) {
-            BigDecimal currentPrice = alphaVantageService.getCurrentPrice(holding.getTicker())
+            BigDecimal currentPrice = priceService.getCurrentPrice(holding.getTicker())
                     .orElse(holding.getAvgCostPerShare());
             BigDecimal currentValue = holding.getShares().multiply(currentPrice);
             BigDecimal gainLoss = currentValue.subtract(holding.getShares().multiply(holding.getAvgCostPerShare()));

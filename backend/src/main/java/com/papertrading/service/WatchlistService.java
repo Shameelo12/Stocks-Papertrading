@@ -16,11 +16,11 @@ import java.util.stream.Collectors;
 public class WatchlistService {
 
     private final WatchlistRepository watchlistRepository;
-    private final AlphaVantageService alphaVantageService;
+    private final PriceService priceService;
 
-    public WatchlistService(WatchlistRepository watchlistRepository, AlphaVantageService alphaVantageService) {
+    public WatchlistService(WatchlistRepository watchlistRepository, PriceService priceService) {
         this.watchlistRepository = watchlistRepository;
-        this.alphaVantageService = alphaVantageService;
+        this.priceService = priceService;
     }
 
     public WatchlistDTO addToWatchlist(User user, String ticker) {
@@ -66,7 +66,7 @@ public class WatchlistService {
     }
 
     private WatchlistDTO toWatchlistDTO(Watchlist watchlist) {
-        BigDecimal currentPrice = alphaVantageService.getCurrentPrice(watchlist.getTicker())
+        BigDecimal currentPrice = priceService.getCurrentPrice(watchlist.getTicker())
                 .orElse(BigDecimal.ZERO);
         return new WatchlistDTO(
                 watchlist.getId(),
