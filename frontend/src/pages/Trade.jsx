@@ -21,6 +21,7 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
 import { usePortfolio } from '../hooks/usePortfolio';
+import PriceChart from '../components/PriceChart';
 import API, { unwrapList, apiErrorMessage } from '../api/axios';
 import { currency, shares as fmtShares } from '../utils/format';
 
@@ -318,6 +319,10 @@ export default function Trade() {
               You own {fmtShares(heldShares)} shares
             </Typography>
           )}
+
+          <Box sx={{ mt: 2 }}>
+            <PriceChart ticker={quote.ticker} height={180} />
+          </Box>
 
           <ToggleButtonGroup
             fullWidth

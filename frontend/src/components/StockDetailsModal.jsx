@@ -14,6 +14,7 @@ import {
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import API, { unwrapList } from '../api/axios';
+import PriceChart from './PriceChart';
 import { currency, currencyAbs, percentAbs, shares as fmtShares } from '../utils/format';
 
 /**
@@ -116,6 +117,10 @@ export default function StockDetailsModal({ open, ticker, onClose }) {
                   {currencyAbs(gain)} ({percentAbs(holding.gainLossPercent)})
                 </Typography>
               </Box>
+            </Box>
+
+            <Box sx={{ mt: 2 }}>
+              <PriceChart ticker={ticker} height={170} />
             </Box>
 
             <Box

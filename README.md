@@ -23,6 +23,7 @@ correctness problems that come with them.
 **Portfolio**
 - Live position valuation with unrealized gain/loss per holding
 - Portfolio value history, computed in a single pass over the transaction log
+- Per-ticker price charts, built from a self-recorded price series
 - Full transaction history with per-trade detail
 
 **Tracking**
@@ -65,25 +66,26 @@ Spring Boot REST API (:8080)
       │        │
       ├── Services (12) ───────────── business logic, @Transactional boundaries
       │        │
-      ├── Repositories (6) ────────── Spring Data JPA
+      ├── Repositories (7) ────────── Spring Data JPA
       │        ▼
-      └── PostgreSQL ──────────────── users, holdings, transactions,
-                                      pending_orders, price_alerts, watchlist
+      ├── PostgreSQL ──────────────── users, holdings, transactions, pending_orders,
+      │                               price_alerts, watchlist, price_history
+      │
+      └── Schedulers (3) ──────────── price alerts, limit-order fills, price snapshots
 ```
 
 **Price resolution** is layered so the app stays usable without a live API key:
 
 ```
-AlphaVantageService (facade)
-        └─► FinnhubService ──── live quotes
-                └─► MockPriceService ──── static prices for 25 common tickers
+PriceService ──── 10s in-memory cache
+     └─► FinnhubService ──── live quotes
+             └─► MockPriceService ──── static prices for 25 common tickers
 ```
 
 If Finnhub returns nothing — no key configured, rate limited, unknown symbol — the
-request falls through to mock prices rather than failing the trade.
-
-> **Note:** `AlphaVantageService` is a historical name. It performs no Alpha Vantage
-> calls; it is purely the facade over the chain above.
+request falls through to mock prices rather than failing the trade. The cache is what
+keeps polling inside the free tier's rate limit: twelve portfolio loads across four
+holdings cost 3 upstream calls rather than 48.
 
 ---
 
@@ -98,8 +100,8 @@ request falls through to mock prices rather than failing the trade.
 
 ### 1. Database
 
-Create the database. Tables are generated automatically on first run
-(`spring.jpa.hibernate.ddl-auto=update`).
+Create the database. Schema is applied by Flyway on first run; Hibernate is set to
+`validate` and will refuse to start if the schema and the entities disagree.
 
 ```bash
 createdb papertrading
@@ -129,6 +131,8 @@ with an empty `.env`. Anything set in the real environment overrides the file.
 | `FINNHUB_API_KEY` | *(empty)* | Free key at [finnhub.io](https://finnhub.io/register). See below. |
 | `STARTING_BALANCE` | `10000.00` | Opening cash for new accounts |
 | `PRICE_CACHE_TTL_SECONDS` | `10` | How long a fetched price is reused |
+| `PRICE_SNAPSHOT_INTERVAL_MS` | `300000` | How often a price point is recorded (5 min) |
+| `PRICE_HISTORY_RETENTION_DAYS` | `90` | How long recorded price points are kept |
 
 #### Live market data
 
@@ -220,6 +224,7 @@ All routes are prefixed `/api`. Everything except `/health`, `/auth/register`,
 | Method | Route | Description |
 |---|---|---|
 | `GET` | `/stocks/{ticker}/price` | Current quote |
+| `GET` | `/stocks/{ticker}/history` | Recorded price series, `?days=` (1–365, default 30) |
 | `GET` | `/stocks/search` | Symbol search |
 | `GET` | `/stocks/suggestions` | Autocomplete suggestions |
 | `GET` | `/analytics/stats` | Trade statistics |
@@ -290,6 +295,10 @@ This is a portfolio project, and it is honest about what it is not:
   by a background scheduler.
 - **Mock prices are static.** When Finnhub is unavailable, the fallback prices do not
   move, so gain/loss will not change.
+- **Price history is self-recorded.** Finnhub's free tier returns 403 for historical
+  candles, so the app builds its own series: seeded from the price recorded on each past
+  trade, then extended by a snapshot of every held or watchlisted ticker every five
+  minutes. A symbol nobody has traded or watched has no chart until it is.
 - **Coverage is partial** — see the table above.
 
 ---
