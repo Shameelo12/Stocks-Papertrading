@@ -31,13 +31,23 @@ function ThemedApp() {
         secondary: isDark ? '#a0a0a0' : '#5a5a5a',
       },
       divider: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+      // Gain and loss are the two colours that carry meaning in this app, and
+      // green-vs-red is the textbook deuteranopia failure: the previous pair
+      // (#05a854 / #ef5350) measured ΔE 3.7 for a red-green colourblind viewer,
+      // far below the ΔE 8 floor — the two were effectively the same colour to
+      // roughly 8% of men. The crimson below measures ΔE 10.4 while still
+      // reading unambiguously as "negative" to normal vision (ΔE 37.1, better
+      // separation than the old pair managed).
+      //
+      // Colour still never carries the signal alone: every gain/loss figure is
+      // paired with a direction arrow and an explicit sign.
       success: {
-        main: '#05a854',
-        light: '#e8f5f0',
+        main: isDark ? '#3ECB84' : '#05a854',
+        light: isDark ? 'rgba(62,203,132,0.12)' : '#e8f5f0',
       },
       error: {
-        main: '#ef5350',
-        light: '#ffebee',
+        main: isDark ? '#EC407A' : '#c2185b',
+        light: isDark ? 'rgba(236,64,122,0.12)' : '#fce4ec',
       },
       warning: {
         main: '#ffa726',

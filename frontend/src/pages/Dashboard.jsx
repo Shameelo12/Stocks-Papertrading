@@ -14,14 +14,7 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import { useAuth } from '../context/AuthContext';
 import { usePortfolio } from '../hooks/usePortfolio';
-
-const currency = (value) =>
-  `$${Number(value ?? 0).toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-
-const percent = (value) => `${Number(value ?? 0).toFixed(2)}%`;
+import { currency, currencyAbs, percentAbs, shares as fmtShares } from '../utils/format';
 
 /** One figure in the summary row. Label above, value below, nothing else. */
 function Stat({ label, value, tone }) {
@@ -94,7 +87,7 @@ function HoldingRow({ holding, onClick }) {
           {holding.ticker}
         </Typography>
         <Typography variant="caption" sx={{ color: 'text.secondary', fontVariantNumeric: 'tabular-nums' }}>
-          {Number(holding.shares).toFixed(2)} shares · avg {currency(holding.avgCostPerShare)}
+          {fmtShares(holding.shares)} shares · avg {currency(holding.avgCostPerShare)}
         </Typography>
       </Box>
 
@@ -107,7 +100,7 @@ function HoldingRow({ holding, onClick }) {
             ? <ArrowUpwardIcon sx={{ fontSize: '0.85rem' }} />
             : <ArrowDownwardIcon sx={{ fontSize: '0.85rem' }} />}
           <Typography variant="caption" sx={{ fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>
-            {currency(Math.abs(gain))} ({percent(Math.abs(holding.gainLossPercent))})
+            {currencyAbs(gain)} ({percentAbs(holding.gainLossPercent)})
           </Typography>
         </Box>
       </Box>
@@ -159,7 +152,7 @@ export default function Dashboard() {
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: tone, mt: 1 }}>
         {up ? <ArrowUpwardIcon sx={{ fontSize: '1rem' }} /> : <ArrowDownwardIcon sx={{ fontSize: '1rem' }} />}
         <Typography sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-          {currency(Math.abs(gain))} ({percent(Math.abs(portfolio?.totalGainLossPercent))})
+          {currencyAbs(gain)} ({percentAbs(portfolio?.totalGainLossPercent)})
         </Typography>
         <Typography variant="body2" sx={{ color: 'text.secondary', ml: 0.5 }}>
           all time

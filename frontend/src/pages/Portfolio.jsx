@@ -2,382 +2,383 @@ import React, { useState, useEffect } from 'react';
 import {
   Container,
   Box,
-  Card,
-  CardContent,
   Typography,
-  Grid,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
+  Divider,
   CircularProgress,
-  Paper,
-  Chip,
-  LinearProgress,
+  Alert,
+  Button,
+  useTheme,
 } from '@mui/material';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import TrendingDownIcon from '@mui/icons-material/TrendingDown';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from 'recharts';
 import { usePortfolio } from '../hooks/usePortfolio';
 import API, { unwrapList } from '../api/axios';
 import StockDetailsModal from '../components/StockDetailsModal';
+import {
+  currency,
+  currencyAbs,
+  percentAbs,
+  compactCurrency,
+  shares as fmtShares,
+} from '../utils/format';
 
-const COLORS = ['#05a854', '#1f3a5f', '#ff6b35', '#f7931e', '#2196f3', '#9c27b0', '#e91e63', '#009688'];
+/** Label above, figure below. Used for the row of supporting numbers. */
+function Stat({ label, value, tone }) {
+  const theme = useTheme();
+  const color =
+    tone === 'up' ? theme.palette.success.main
+    : tone === 'down' ? theme.palette.error.main
+    : 'text.primary';
+
+  return (
+    <Box sx={{ minWidth: 0 }}>
+      <Typography
+        variant="caption"
+        sx={{
+          color: 'text.secondary',
+          textTransform: 'uppercase',
+          letterSpacing: '0.06em',
+          fontSize: '0.7rem',
+          display: 'block',
+          mb: 0.5,
+        }}
+      >
+        {label}
+      </Typography>
+      <Typography
+        sx={{
+          fontSize: '1.3rem',
+          fontWeight: 600,
+          color,
+          fontVariantNumeric: 'tabular-nums',
+          letterSpacing: '-0.01em',
+        }}
+      >
+        {value}
+      </Typography>
+    </Box>
+  );
+}
+
+/**
+ * Allocation as sorted horizontal bars rather than a pie.
+ *
+ * A pie makes "is AAPL bigger than MSFT" a comparison of angles; sorted bars with
+ * the percentage stated make it a comparison of lengths plus a readable number.
+ * It also needs only one hue, where the previous two pie charts cycled an
+ * arbitrary eight-colour list that carried no meaning.
+ */
+function Allocation({ rows, total }) {
+  const theme = useTheme();
+  if (!rows.length) return null;
+
+  const max = Math.max(...rows.map((r) => r.value), 1);
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.75 }}>
+      {rows.map((row) => {
+        const share = total > 0 ? (row.value / total) * 100 : 0;
+        return (
+          <Box key={row.name}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, mb: 0.5 }}>
+              <Typography sx={{ fontWeight: 600, fontSize: '0.9rem' }}>{row.name}</Typography>
+              <Typography
+                variant="body2"
+                sx={{ color: 'text.secondary', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}
+              >
+                {currency(row.value)} · {share.toFixed(1)}%
+              </Typography>
+            </Box>
+            <Box
+              sx={{
+                height: 6,
+                borderRadius: '3px',
+                backgroundColor: 'action.hover',
+                overflow: 'hidden',
+              }}
+            >
+              <Box
+                sx={{
+                  height: '100%',
+                  width: `${(row.value / max) * 100}%`,
+                  borderRadius: '3px',
+                  backgroundColor: row.muted
+                    ? theme.palette.text.disabled
+                    : theme.palette.primary.main,
+                }}
+              />
+            </Box>
+          </Box>
+        );
+      })}
+    </Box>
+  );
+}
+
+function HoldingRow({ holding, totalValue, onClick }) {
+  const theme = useTheme();
+  const gain = Number(holding.gainLoss ?? 0);
+  const up = gain >= 0;
+  const tone = up ? theme.palette.success.main : theme.palette.error.main;
+  const weight = totalValue > 0 ? (Number(holding.currentValue) / totalValue) * 100 : 0;
+
+  return (
+    <Box
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onClick()}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 2,
+        py: 2,
+        px: 1,
+        mx: -1,
+        borderRadius: 1,
+        cursor: 'pointer',
+        transition: 'background-color 0.15s ease',
+        '&:hover': { backgroundColor: 'action.hover' },
+        '&:focus-visible': { outline: `2px solid ${theme.palette.primary.main}`, outlineOffset: 2 },
+      }}
+    >
+      <Box sx={{ minWidth: 0 }}>
+        <Typography sx={{ fontWeight: 600 }}>{holding.ticker}</Typography>
+        <Typography variant="caption" sx={{ color: 'text.secondary', fontVariantNumeric: 'tabular-nums' }}>
+          {fmtShares(holding.shares)} @ {currency(holding.avgCostPerShare)} · now {currency(holding.currentPrice)}
+        </Typography>
+      </Box>
+
+      <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
+        <Typography sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+          {currency(holding.currentValue)}
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, justifyContent: 'flex-end', color: tone }}>
+          {up ? <ArrowUpwardIcon sx={{ fontSize: '0.8rem' }} /> : <ArrowDownwardIcon sx={{ fontSize: '0.8rem' }} />}
+          <Typography variant="caption" sx={{ fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>
+            {currencyAbs(gain)} ({percentAbs(holding.gainLossPercent)})
+          </Typography>
+          <Typography variant="caption" sx={{ color: 'text.secondary', ml: 0.75 }}>
+            {weight.toFixed(0)}%
+          </Typography>
+        </Box>
+      </Box>
+    </Box>
+  );
+}
 
 export default function Portfolio() {
-  const { portfolio, loading, error, lastUpdated } = usePortfolio(5000); // Auto-refresh every 5 seconds
-  const [historyData, setHistoryData] = useState([]);
+  const theme = useTheme();
+  const { portfolio, loading, error } = usePortfolio(15000);
+  const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [selectedTicker, setSelectedTicker] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const response = await API.get('/portfolio/history');
-        const formattedData = unwrapList(response.data).map(item => ({
-          timestamp: new Date(item.timestamp).toLocaleDateString(),
-          portfolioValue: parseFloat(item.portfolioValue),
-          balance: parseFloat(item.balance),
-          investedValue: parseFloat(item.investedValue),
-        }));
-        setHistoryData(formattedData);
-      } catch (err) {
-        console.error('Failed to fetch portfolio history:', err);
-      } finally {
-        setHistoryLoading(false);
-      }
-    };
-
-    fetchHistory();
+    let cancelled = false;
+    API.get('/portfolio/history')
+      .then((res) => {
+        if (cancelled) return;
+        setHistory(
+          unwrapList(res.data).map((item) => ({
+            date: new Date(item.timestamp).toLocaleDateString(undefined, {
+              month: 'short',
+              day: 'numeric',
+            }),
+            value: parseFloat(item.portfolioValue),
+          }))
+        );
+      })
+      .catch(() => {
+        /* the chart is supplementary; the page is still usable without it */
+      })
+      .finally(() => !cancelled && setHistoryLoading(false));
+    return () => { cancelled = true; };
   }, []);
 
-  if (loading) {
+  if (loading && !portfolio) {
     return (
-      <Container maxWidth="lg" sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-        <CircularProgress sx={{ color: '#05a854' }} />
+      <Container maxWidth="md" sx={{ display: 'flex', justifyContent: 'center', pt: 12 }}>
+        <CircularProgress size={32} />
       </Container>
     );
   }
 
-  // Allocation data (Cash vs Invested)
-  const allocationData = [
-    { name: 'Cash', value: portfolio?.currentBalance || 0, color: '#1f3a5f' },
-    { name: 'Invested', value: portfolio?.investedBalance || 0, color: '#05a854' },
+  const gain = Number(portfolio?.totalGainLoss ?? 0);
+  const up = gain >= 0;
+  const tone = up ? theme.palette.success.main : theme.palette.error.main;
+  const holdings = portfolio?.holdings ?? [];
+  const totalValue = Number(portfolio?.totalPortfolioValue ?? 0);
+
+  const allocationRows = [
+    ...holdings
+      .map((h) => ({ name: h.ticker, value: Number(h.currentValue) }))
+      .sort((a, b) => b.value - a.value),
+    { name: 'Cash', value: Number(portfolio?.currentBalance ?? 0), muted: true },
   ];
 
-  // Holdings breakdown data
-  const holdingsData = (portfolio?.holdings || []).map((h, idx) => ({
-    name: h.ticker,
-    value: parseFloat(h.currentValue),
-    color: COLORS[idx % COLORS.length],
-    ...h,
-  }));
-
-  const renderCustomLabel = (entry) => {
-    const percent = ((entry.value / (portfolio?.totalPortfolioValue || 1)) * 100).toFixed(1);
-    return `${percent}%`;
-  };
-
-  const CustomTooltip = ({ active, payload }) => {
-    if (active && payload && payload[0]) {
-      const data = payload[0].payload;
-      return (
-        <Box
-          sx={{
-            backgroundColor: 'rgba(0,0,0,0.8)',
-            color: 'white',
-            padding: '8px 12px',
-            borderRadius: '4px',
-            fontSize: '12px',
-            fontWeight: 600,
-          }}
-        >
-          <Typography variant="caption" sx={{ color: 'white', display: 'block' }}>
-            {data.name}
-          </Typography>
-          <Typography variant="caption" sx={{ color: 'white', display: 'block' }}>
-            ${parseFloat(payload[0].value).toFixed(2)}
-          </Typography>
-          <Typography variant="caption" sx={{ color: 'white', display: 'block' }}>
-            {((payload[0].value / (portfolio?.totalPortfolioValue || 1)) * 100).toFixed(1)}%
-          </Typography>
-        </Box>
-      );
-    }
-    return null;
-  };
-
   return (
-    <Container maxWidth="lg" sx={{ paddingY: 4 }}>
-      {/* Header */}
-      <Box sx={{ marginBottom: 4 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, marginBottom: 1 }}>
-          Portfolio Analysis
+    <Container maxWidth="md" sx={{ py: { xs: 3, md: 5 } }}>
+      {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+
+      <Typography
+        variant="caption"
+        sx={{ color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}
+      >
+        Portfolio value
+      </Typography>
+      <Typography
+        sx={{
+          fontSize: { xs: '2.5rem', md: '3.25rem' },
+          fontWeight: 600,
+          letterSpacing: '-0.03em',
+          lineHeight: 1.05,
+          mt: 0.5,
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        {currency(totalValue)}
+      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: tone, mt: 1 }}>
+        {up ? <ArrowUpwardIcon sx={{ fontSize: '1rem' }} /> : <ArrowDownwardIcon sx={{ fontSize: '1rem' }} />}
+        <Typography sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+          {currencyAbs(gain)} ({percentAbs(portfolio?.totalGainLossPercent)})
         </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            Your holdings and allocation breakdown
-          </Typography>
-          {lastUpdated && (
-            <Chip
-              label={`Updated: ${lastUpdated.toLocaleTimeString()}`}
-              size="small"
-              variant="outlined"
-            />
-          )}
-        </Box>
+        <Typography variant="body2" sx={{ color: 'text.secondary', ml: 0.5 }}>
+          all time
+        </Typography>
       </Box>
 
-      {/* Key Metrics */}
-      <Grid container spacing={3} sx={{ marginBottom: 4 }}>
-        {[
-          {
-            label: 'Portfolio Value',
-            value: `$${portfolio?.totalPortfolioValue.toFixed(2) || '0.00'}`,
-            icon: '💼',
-            bg: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
-          },
-          {
-            label: 'Total Return',
-            value: `${portfolio?.totalGainLossPercent.toFixed(2) || '0.00'}%`,
-            icon: portfolio?.totalGainLoss >= 0 ? '📈' : '📉',
-            bg: portfolio?.totalGainLoss >= 0 ? 'linear-gradient(135deg, #05a854 0%, #0d8f47 100%)' : 'linear-gradient(135deg, #d32f2f 0%, #c62828 100%)',
-          },
-          {
-            label: 'Gain/Loss',
-            value: `$${portfolio?.totalGainLoss.toFixed(2) || '0.00'}`,
-            icon: '💰',
-            bg: 'linear-gradient(135deg, #1f3a5f 0%, #2a5298 100%)',
-          },
-        ].map((metric, idx) => (
-          <Grid item xs={12} sm={6} md={4} key={idx}>
-            <Card elevation={0} sx={{ background: metric.bg, color: 'white', borderRadius: '16px', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', transition: 'all 0.3s ease', '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 12px 32px rgba(0,0,0,0.2)' } }}>
-              <CardContent sx={{ padding: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                  <Box>
-                    <Typography variant="body2" sx={{ opacity: 0.85, marginBottom: 1, fontWeight: 500 }}>
-                      {metric.label}
-                    </Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                      {metric.value}
-                    </Typography>
-                  </Box>
-                  <Typography sx={{ fontSize: '2rem' }}>
-                    {metric.icon}
-                  </Typography>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-
-      {/* Charts Section */}
-      <Grid container spacing={3} sx={{ marginBottom: 4 }}>
-        {/* Allocation Pie Chart */}
-        <Grid item xs={12} md={6}>
-          <Card elevation={0}>
-            <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 700, marginBottom: 3 }}>
-                Allocation Breakdown
-              </Typography>
-              {portfolio?.totalPortfolioValue > 0 ? (
-                <Box sx={{ width: '100%', height: 350, display: 'flex', justifyContent: 'center' }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={allocationData}
-                        cx="50%"
-                        cy="45%"
-                        labelLine={false}
-                        label={renderCustomLabel}
-                        outerRadius={100}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {allocationData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip content={<CustomTooltip />} />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </Box>
-              ) : (
-                <Box sx={{ textAlign: 'center', padding: 4 }}>
-                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                    No holdings yet
-                  </Typography>
-                </Box>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Holdings Pie Chart */}
-        <Grid item xs={12} md={6}>
-          <Card elevation={0}>
-            <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 700, marginBottom: 3 }}>
-                Holdings Breakdown
-              </Typography>
-              {holdingsData.length > 0 ? (
-                <Box sx={{ width: '100%', height: 350, display: 'flex', justifyContent: 'center' }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={holdingsData}
-                        cx="50%"
-                        cy="45%"
-                        labelLine={false}
-                        label={renderCustomLabel}
-                        outerRadius={100}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {holdingsData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip content={<CustomTooltip />} />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </Box>
-              ) : (
-                <Box sx={{ textAlign: 'center', padding: 4 }}>
-                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                    No stocks in portfolio
-                  </Typography>
-                </Box>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Performance Chart */}
-      <Card elevation={0} sx={{ marginBottom: 4 }}>
-        <CardContent>
-          <Typography variant="h6" sx={{ fontWeight: 700, marginBottom: 3 }}>
-            Portfolio Performance
-          </Typography>
-          {historyLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', padding: 4 }}>
-              <CircularProgress sx={{ color: '#05a854' }} />
-            </Box>
-          ) : historyData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={historyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
-                <XAxis
-                  dataKey="timestamp"
-                  stroke="rgba(0,0,0,0.5)"
-                  style={{ fontSize: '12px' }}
-                />
-                <YAxis
-                  stroke="rgba(0,0,0,0.5)"
-                  style={{ fontSize: '12px' }}
-                  tickFormatter={(value) => `$${value.toFixed(0)}`}
-                />
-                <Tooltip
-                  formatter={(value) => `$${parseFloat(value).toFixed(2)}`}
-                  contentStyle={{
-                    backgroundColor: 'rgba(0,0,0,0.8)',
-                    border: 'none',
-                    borderRadius: '4px',
-                    color: 'white',
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="portfolioValue"
-                  stroke="#05a854"
-                  strokeWidth={2}
-                  dot={false}
-                  isAnimationActive={true}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          ) : (
-            <Box sx={{ textAlign: 'center', padding: 4 }}>
-              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                No history yet
-              </Typography>
-            </Box>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Detailed Holdings Table */}
-      {holdingsData.length > 0 && (
-        <Card elevation={0}>
-          <CardContent sx={{ padding: 0 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, padding: 3, marginBottom: 0 }}>
-              Holdings Details
+      {/* Value over time. One series, so the heading names it and no legend is needed. */}
+      <Box sx={{ mt: 4, height: 260 }}>
+        {historyLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', pt: 8 }}>
+            <CircularProgress size={24} />
+          </Box>
+        ) : history.length > 1 ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={history} margin={{ top: 8, right: 8, bottom: 0, left: 8 }}>
+              <defs>
+                <linearGradient id="valueFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={theme.palette.primary.main} stopOpacity={0.22} />
+                  <stop offset="100%" stopColor={theme.palette.primary.main} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke={theme.palette.divider}
+                vertical={false}
+              />
+              <XAxis
+                dataKey="date"
+                tick={{ fill: theme.palette.text.secondary, fontSize: 11 }}
+                axisLine={{ stroke: theme.palette.divider }}
+                tickLine={false}
+                minTickGap={24}
+              />
+              <YAxis
+                tick={{ fill: theme.palette.text.secondary, fontSize: 11 }}
+                axisLine={false}
+                tickLine={false}
+                width={56}
+                tickFormatter={compactCurrency}
+                domain={['auto', 'auto']}
+              />
+              <Tooltip
+                formatter={(v) => [currency(v), 'Value']}
+                contentStyle={{
+                  backgroundColor: theme.palette.background.paper,
+                  border: `1px solid ${theme.palette.divider}`,
+                  borderRadius: 8,
+                  fontSize: 13,
+                  color: theme.palette.text.primary,
+                }}
+                labelStyle={{ color: theme.palette.text.secondary }}
+                cursor={{ stroke: theme.palette.divider, strokeWidth: 1 }}
+              />
+              <Area
+                type="monotone"
+                dataKey="value"
+                stroke={theme.palette.primary.main}
+                strokeWidth={2}
+                fill="url(#valueFill)"
+                dot={false}
+                activeDot={{ r: 4, strokeWidth: 2, stroke: theme.palette.background.paper }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        ) : (
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              Not enough history yet — make a few trades and a value chart will appear here.
             </Typography>
-            <TableContainer>
-              <Table>
-                <TableHead sx={{ backgroundColor: 'rgba(0,0,0,0.03)' }}>
-                  <TableRow>
-                    <TableCell sx={{ fontWeight: 700 }}>Ticker</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 700 }}>Shares</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 700 }}>Avg Cost</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 700 }}>Current Price</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 700 }}>Value</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 700 }}>% of Portfolio</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 700 }}>P&L</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {holdingsData.map((holding) => (
-                    <TableRow key={holding.ticker} hover onClick={() => { setSelectedTicker(holding.ticker); setModalOpen(true); }} sx={{ cursor: 'pointer' }}>
-                      <TableCell sx={{ fontWeight: 700 }}>
-                        <Chip
-                          label={holding.ticker}
-                          variant="outlined"
-                          size="small"
-                          sx={{
-                            fontWeight: 700,
-                            borderColor: holding.color,
-                            color: holding.color,
-                            cursor: 'pointer',
-                          }}
-                          onClick={(e) => { e.stopPropagation(); setSelectedTicker(holding.ticker); setModalOpen(true); }}
-                        />
-                      </TableCell>
-                      <TableCell align="right">{parseFloat(holding.shares).toFixed(2)}</TableCell>
-                      <TableCell align="right">${parseFloat(holding.avgCostPerShare).toFixed(2)}</TableCell>
-                      <TableCell align="right">${parseFloat(holding.currentPrice).toFixed(2)}</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 600 }}>
-                        ${parseFloat(holding.currentValue).toFixed(2)}
-                      </TableCell>
-                      <TableCell align="right">
-                        {((parseFloat(holding.currentValue) / (portfolio?.totalPortfolioValue || 1)) * 100).toFixed(1)}%
-                      </TableCell>
-                      <TableCell
-                        align="right"
-                        sx={{
-                          color: holding.gainLoss >= 0 ? '#05a854' : '#d32f2f',
-                          fontWeight: 700,
-                        }}
-                      >
-                        ${parseFloat(holding.gainLoss).toFixed(2)} ({parseFloat(holding.gainLossPercent).toFixed(2)}%)
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </CardContent>
-        </Card>
+          </Box>
+        )}
+      </Box>
+
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(3, 1fr)' },
+          gap: 3,
+          mt: 4,
+          pt: 3,
+          borderTop: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
+        <Stat label="Buying power" value={currency(portfolio?.currentBalance)} />
+        <Stat label="Cost basis" value={currency(portfolio?.investedBalance)} />
+        <Stat label="Positions" value={holdings.length} />
+      </Box>
+
+      {holdings.length > 0 && (
+        <>
+          <Typography sx={{ fontWeight: 600, fontSize: '1.05rem', mt: 6, mb: 2 }}>
+            Allocation
+          </Typography>
+          <Allocation rows={allocationRows} total={totalValue} />
+
+          <Typography sx={{ fontWeight: 600, fontSize: '1.05rem', mt: 6, mb: 1 }}>
+            Positions
+          </Typography>
+          <Divider />
+          {holdings.map((holding, i) => (
+            <React.Fragment key={holding.ticker}>
+              {i > 0 && <Divider />}
+              <HoldingRow
+                holding={holding}
+                totalValue={totalValue}
+                onClick={() => { setSelectedTicker(holding.ticker); setModalOpen(true); }}
+              />
+            </React.Fragment>
+          ))}
+        </>
       )}
 
-      {/* Stock Details Modal */}
+      {holdings.length === 0 && (
+        <Box sx={{ py: 7, textAlign: 'center' }}>
+          <Typography sx={{ fontWeight: 600, mb: 0.5 }}>No positions yet</Typography>
+          <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
+            Your buying power is {currency(portfolio?.currentBalance)}.
+          </Typography>
+          <Button variant="contained" href="/trade" disableElevation>
+            Make your first trade
+          </Button>
+        </Box>
+      )}
+
       <StockDetailsModal
         open={modalOpen}
         ticker={selectedTicker}
