@@ -7,7 +7,7 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Divider,
+  Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
@@ -20,20 +20,95 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-const DRAWER_WIDTH = 280;
+const DRAWER_WIDTH = 236;
 
-const menuItems = [
-  { label: 'Dashboard', icon: DashboardIcon, path: '/dashboard' },
-  { label: 'Trade', icon: TrendingUpIcon, path: '/trade' },
-  { label: 'Portfolio', icon: AccountBalanceIcon, path: '/portfolio' },
-  { label: 'Watchlist', icon: StarIcon, path: '/watchlist' },
+/**
+ * Navigation, grouped by what the items are for: the first group is where you
+ * act on your account, the second is where you look back at it.
+ */
+const SECTIONS = [
+  {
+    heading: 'Invest',
+    items: [
+      { label: 'Dashboard', icon: DashboardIcon, path: '/dashboard' },
+      { label: 'Trade', icon: TrendingUpIcon, path: '/trade' },
+      { label: 'Portfolio', icon: AccountBalanceIcon, path: '/portfolio' },
+      { label: 'Watchlist', icon: StarIcon, path: '/watchlist' },
+    ],
+  },
+  {
+    heading: 'Review',
+    items: [
+      { label: 'Analytics', icon: AnalyticsIcon, path: '/analytics' },
+      { label: 'History', icon: HistoryIcon, path: '/history' },
+      { label: 'Settings', icon: SettingsIcon, path: '/settings' },
+    ],
+  },
 ];
 
-const otherItems = [
-  { label: 'Analytics', icon: AnalyticsIcon, path: '/analytics' },
-  { label: 'History', icon: HistoryIcon, path: '/history' },
-  { label: 'Settings', icon: SettingsIcon, path: '/settings' },
-];
+/**
+ * A single navigation entry.
+ *
+ * Previously the two groups each carried their own copy of this markup and
+ * styling, so any change had to be made twice.
+ */
+function NavItem({ item, active, onNavigate }) {
+  const theme = useTheme();
+  const Icon = item.icon;
+
+  return (
+    <ListItem disablePadding sx={{ px: 1.5, mb: 0.25 }}>
+      <ListItemButton
+        onClick={() => onNavigate(item.path)}
+        // Marks the current page for assistive tech, which the background
+        // tint alone did not convey.
+        aria-current={active ? 'page' : undefined}
+        sx={{
+          borderRadius: '8px',
+          py: 1.1,
+          px: 1.5,
+          position: 'relative',
+          color: active ? 'primary.main' : 'text.secondary',
+          backgroundColor: active ? 'action.selected' : 'transparent',
+          '&:hover': {
+            backgroundColor: active ? 'action.selected' : 'action.hover',
+            color: active ? 'primary.main' : 'text.primary',
+          },
+          '&:focus-visible': {
+            outline: `2px solid ${theme.palette.primary.main}`,
+            outlineOffset: -2,
+          },
+          // A short rail on the active item, so the current page is legible
+          // without depending on the tint being visible.
+          '&::before': active
+            ? {
+                content: '""',
+                position: 'absolute',
+                left: 0,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                width: 3,
+                height: 18,
+                borderRadius: '0 2px 2px 0',
+                backgroundColor: 'primary.main',
+              }
+            : undefined,
+        }}
+      >
+        <ListItemIcon sx={{ minWidth: 34, color: 'inherit' }}>
+          <Icon sx={{ fontSize: '1.25rem' }} />
+        </ListItemIcon>
+        <ListItemText
+          primary={item.label}
+          primaryTypographyProps={{
+            fontSize: '0.9rem',
+            fontWeight: active ? 600 : 500,
+          }}
+        />
+      </ListItemButton>
+    </ListItem>
+  );
+}
 
 export default function Sidebar({ open, onClose }) {
   const navigate = useNavigate();
@@ -43,110 +118,53 @@ export default function Sidebar({ open, onClose }) {
 
   const handleNavigate = (path) => {
     navigate(path);
-    if (isMobile) {
-      onClose();
-    }
+    if (isMobile) onClose();
   };
 
-  const isActive = (path) => location.pathname === path;
-
-  const drawerContent = (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Main Navigation */}
-      <Box sx={{ flex: 1, paddingTop: 2 }}>
-        <List sx={{ paddingX: 0 }}>
-          {menuItems.map((item) => (
-            <ListItem key={item.path} disablePadding sx={{ paddingX: 1, marginY: 0.5 }}>
-              <ListItemButton
-                onClick={() => handleNavigate(item.path)}
-                sx={{
-                  borderRadius: '8px',
-                  backgroundColor: isActive(item.path)
-                    ? 'rgba(5, 168, 84, 0.1)'
-                    : 'transparent',
-                  color: isActive(item.path) ? '#05a854' : 'inherit',
-                  fontWeight: isActive(item.path) ? 600 : 500,
-                  '&:hover': {
-                    backgroundColor: 'rgba(5, 168, 84, 0.08)',
-                  },
-                  paddingX: 2,
-                  paddingY: 1.5,
-                }}
-              >
-                <ListItemIcon
-                  sx={{
-                    minWidth: 40,
-                    color: isActive(item.path) ? '#05a854' : 'inherit',
-                  }}
-                >
-                  <item.icon />
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.label}
-                  primaryTypographyProps={{
-                    variant: 'body2',
-                    sx: { fontWeight: 'inherit' },
-                  }}
-                />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-      </Box>
-
-      {/* Divider */}
-      <Divider sx={{ my: 2 }} />
-
-      {/* Other Items */}
-      <Box sx={{ paddingBottom: 2 }}>
-        <List sx={{ paddingX: 0 }}>
-          {otherItems.map((item) => (
-            <ListItem key={item.path} disablePadding sx={{ paddingX: 1, marginY: 0.5 }}>
-              <ListItemButton
-                onClick={() => handleNavigate(item.path)}
-                sx={{
-                  borderRadius: '8px',
-                  backgroundColor: isActive(item.path)
-                    ? 'rgba(5, 168, 84, 0.1)'
-                    : 'transparent',
-                  color: isActive(item.path) ? '#05a854' : 'inherit',
-                  fontWeight: isActive(item.path) ? 600 : 500,
-                  '&:hover': {
-                    backgroundColor: 'rgba(5, 168, 84, 0.08)',
-                  },
-                  paddingX: 2,
-                  paddingY: 1.5,
-                }}
-              >
-                <ListItemIcon
-                  sx={{
-                    minWidth: 40,
-                    color: isActive(item.path) ? '#05a854' : 'inherit',
-                  }}
-                >
-                  <item.icon />
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.label}
-                  primaryTypographyProps={{
-                    variant: 'body2',
-                    sx: { fontWeight: 'inherit' },
-                  }}
-                />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-      </Box>
+  const content = (
+    <Box
+      component="nav"
+      aria-label="Main navigation"
+      sx={{ height: '100%', display: 'flex', flexDirection: 'column', pt: 2 }}
+    >
+      {SECTIONS.map((section, i) => (
+        <Box key={section.heading} sx={{ mt: i > 0 ? 3 : 0 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              display: 'block',
+              px: 3,
+              mb: 0.75,
+              color: 'text.disabled',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              fontSize: '0.67rem',
+              fontWeight: 600,
+            }}
+          >
+            {section.heading}
+          </Typography>
+          <List disablePadding>
+            {section.items.map((item) => (
+              <NavItem
+                key={item.path}
+                item={item}
+                active={location.pathname === item.path}
+                onNavigate={handleNavigate}
+              />
+            ))}
+          </List>
+        </Box>
+      ))}
     </Box>
   );
 
   return (
     <>
-      {/* Desktop Sidebar */}
       <Box
         sx={{
           width: DRAWER_WIDTH,
+          flexShrink: 0,
           display: { xs: 'none', md: 'flex' },
           flexDirection: 'column',
           borderRight: '1px solid',
@@ -156,21 +174,16 @@ export default function Sidebar({ open, onClose }) {
           overflow: 'auto',
         }}
       >
-        {drawerContent}
+        {content}
       </Box>
 
-      {/* Mobile Drawer */}
       <Drawer
         anchor="left"
         open={open}
         onClose={onClose}
-        sx={{
-          display: { xs: 'flex', md: 'none' },
-        }}
+        sx={{ display: { xs: 'flex', md: 'none' } }}
       >
-        <Box sx={{ width: DRAWER_WIDTH }}>
-          {drawerContent}
-        </Box>
+        <Box sx={{ width: DRAWER_WIDTH }}>{content}</Box>
       </Drawer>
     </>
   );
