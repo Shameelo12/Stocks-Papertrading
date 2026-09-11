@@ -1,228 +1,214 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Typography,
   Container,
   Box,
-  Card,
-  CardContent,
   Button,
-  Grid,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
+  Divider,
   CircularProgress,
-  Chip,
+  Alert,
+  useTheme,
 } from '@mui/material';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import { useAuth } from '../context/AuthContext';
-import API from '../api/axios';
+import { usePortfolio } from '../hooks/usePortfolio';
+
+const currency = (value) =>
+  `$${Number(value ?? 0).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+
+const percent = (value) => `${Number(value ?? 0).toFixed(2)}%`;
+
+/** One figure in the summary row. Label above, value below, nothing else. */
+function Stat({ label, value, tone }) {
+  const theme = useTheme();
+  const color =
+    tone === 'up' ? theme.palette.success.main
+    : tone === 'down' ? theme.palette.error.main
+    : 'text.primary';
+
+  return (
+    <Box sx={{ minWidth: 0 }}>
+      <Typography
+        variant="caption"
+        sx={{
+          color: 'text.secondary',
+          textTransform: 'uppercase',
+          letterSpacing: '0.06em',
+          fontSize: '0.7rem',
+          display: 'block',
+          mb: 0.5,
+        }}
+      >
+        {label}
+      </Typography>
+      <Typography
+        sx={{
+          fontSize: '1.35rem',
+          fontWeight: 600,
+          color,
+          fontVariantNumeric: 'tabular-nums',
+          letterSpacing: '-0.01em',
+        }}
+      >
+        {value}
+      </Typography>
+    </Box>
+  );
+}
+
+/** One position. Ticker and share count on the left, value and return on the right. */
+function HoldingRow({ holding, onClick }) {
+  const theme = useTheme();
+  const gain = Number(holding.gainLoss ?? 0);
+  const up = gain >= 0;
+  const tone = up ? theme.palette.success.main : theme.palette.error.main;
+
+  return (
+    <Box
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onClick?.()}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 2,
+        py: 2,
+        px: 1,
+        mx: -1,
+        borderRadius: 1,
+        cursor: 'pointer',
+        transition: 'background-color 0.15s ease',
+        '&:hover': { backgroundColor: 'action.hover' },
+        '&:focus-visible': { outline: `2px solid ${theme.palette.primary.main}`, outlineOffset: 2 },
+      }}
+    >
+      <Box sx={{ minWidth: 0 }}>
+        <Typography sx={{ fontWeight: 600, fontSize: '1rem', letterSpacing: '0.01em' }}>
+          {holding.ticker}
+        </Typography>
+        <Typography variant="caption" sx={{ color: 'text.secondary', fontVariantNumeric: 'tabular-nums' }}>
+          {Number(holding.shares).toFixed(2)} shares · avg {currency(holding.avgCostPerShare)}
+        </Typography>
+      </Box>
+
+      <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
+        <Typography sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+          {currency(holding.currentValue)}
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, justifyContent: 'flex-end', color: tone }}>
+          {up
+            ? <ArrowUpwardIcon sx={{ fontSize: '0.85rem' }} />
+            : <ArrowDownwardIcon sx={{ fontSize: '0.85rem' }} />}
+          <Typography variant="caption" sx={{ fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>
+            {currency(Math.abs(gain))} ({percent(Math.abs(holding.gainLossPercent))})
+          </Typography>
+        </Box>
+      </Box>
+    </Box>
+  );
+}
 
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [portfolio, setPortfolio] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const theme = useTheme();
+  const { portfolio, loading, error } = usePortfolio(15000);
 
-  useEffect(() => {
-    fetchPortfolio();
-  }, []);
-
-  const fetchPortfolio = async () => {
-    try {
-      const response = await API.get('/portfolio');
-      setPortfolio(response.data);
-    } catch (err) {
-      console.error('Failed to fetch portfolio');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
+  if (loading && !portfolio) {
     return (
-      <Container maxWidth="lg" sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-        <CircularProgress sx={{ color: '#05a854' }} size={60} />
+      <Container maxWidth="md" sx={{ display: 'flex', justifyContent: 'center', pt: 12 }}>
+        <CircularProgress size={32} />
       </Container>
     );
   }
 
+  const gain = Number(portfolio?.totalGainLoss ?? 0);
+  const up = gain >= 0;
+  const tone = up ? theme.palette.success.main : theme.palette.error.main;
+  const holdings = portfolio?.holdings ?? [];
+
   return (
-    <Container maxWidth="lg" sx={{ paddingY: 4 }}>
-      {/* Welcome Section */}
-      <Box sx={{ marginBottom: 5 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, marginBottom: 1 }}>
-          Welcome back, {user?.email?.split('@')[0]}
+    <Container maxWidth="md" sx={{ py: { xs: 3, md: 5 } }}>
+      {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+
+      <Typography variant="caption" sx={{ color: 'text.secondary', letterSpacing: '0.04em' }}>
+        {user?.email?.split('@')[0]}
+      </Typography>
+
+      {/* The hero figure. Everything else on this page is secondary to it. */}
+      <Typography
+        sx={{
+          fontSize: { xs: '2.75rem', md: '3.5rem' },
+          fontWeight: 600,
+          letterSpacing: '-0.03em',
+          lineHeight: 1.05,
+          mt: 0.5,
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        {currency(portfolio?.totalPortfolioValue)}
+      </Typography>
+
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: tone, mt: 1 }}>
+        {up ? <ArrowUpwardIcon sx={{ fontSize: '1rem' }} /> : <ArrowDownwardIcon sx={{ fontSize: '1rem' }} />}
+        <Typography sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+          {currency(Math.abs(gain))} ({percent(Math.abs(portfolio?.totalGainLossPercent))})
         </Typography>
-        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          Here's your portfolio summary
+        <Typography variant="body2" sx={{ color: 'text.secondary', ml: 0.5 }}>
+          all time
         </Typography>
       </Box>
 
-      {/* Key Metrics */}
-      <Grid container spacing={3} sx={{ marginBottom: 4 }}>
-        {[
-          {
-            label: 'Cash Balance',
-            value: `$${portfolio?.currentBalance.toFixed(2) || '0.00'}`,
-            icon: '💰',
-            bg: 'linear-gradient(135deg, #1f3a5f 0%, #2a5298 100%)',
-          },
-          {
-            label: 'Invested',
-            value: `$${portfolio?.investedBalance.toFixed(2) || '0.00'}`,
-            icon: '📈',
-            bg: 'linear-gradient(135deg, #05a854 0%, #0d8f47 100%)',
-          },
-          {
-            label: 'Portfolio Value',
-            value: `$${portfolio?.totalPortfolioValue.toFixed(2) || '0.00'}`,
-            icon: '💼',
-            bg: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
-          },
-          {
-            label: 'Total Gain/Loss',
-            value: `$${portfolio?.totalGainLoss.toFixed(2) || '0.00'} (${portfolio?.totalGainLossPercent.toFixed(2)}%)`,
-            icon: portfolio?.totalGainLoss >= 0 ? '🚀' : '📉',
-            bg: portfolio?.totalGainLoss >= 0 ? 'linear-gradient(135deg, #05a854 0%, #0d8f47 100%)' : 'linear-gradient(135deg, #d32f2f 0%, #c62828 100%)',
-          },
-        ].map((metric, idx) => (
-          <Grid item xs={12} sm={6} md={3} key={idx}>
-            <Card
-              elevation={0}
-              sx={{
-                height: '100%',
-                background: metric.bg,
-                color: 'white',
-                borderRadius: '16px',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-                transition: 'all 0.3s ease',
-                cursor: 'pointer',
-                '&:hover': {
-                  transform: 'translateY(-8px)',
-                  boxShadow: '0 16px 40px rgba(0,0,0,0.25)',
-                },
-              }}
-            >
-              <CardContent sx={{ padding: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                  <Box>
-                    <Typography variant="body2" sx={{ opacity: 0.85, marginBottom: 1, fontWeight: 500 }}>
-                      {metric.label}
-                    </Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                      {metric.value}
-                    </Typography>
-                  </Box>
-                  <Typography sx={{ fontSize: '2rem' }}>
-                    {metric.icon}
-                  </Typography>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(3, 1fr)' },
+          gap: 3,
+          mt: 5,
+          pt: 3,
+          borderTop: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
+        <Stat label="Buying power" value={currency(portfolio?.currentBalance)} />
+        <Stat label="Invested" value={currency(portfolio?.investedBalance)} />
+        <Stat label="Positions" value={holdings.length} />
+      </Box>
 
-      {/* Holdings Section */}
-      {portfolio?.holdings && portfolio.holdings.length > 0 ? (
-        <>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-            <Typography variant="h5" sx={{ fontWeight: 700 }}>
-              Your Holdings
-            </Typography>
-            <Button
-              variant="contained"
-              onClick={() => navigate('/trade')}
-              sx={{
-                backgroundColor: '#05a854',
-                '&:hover': { backgroundColor: '#0d8f47' },
-              }}
-            >
-              Trade More
-            </Button>
-          </Box>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 6, mb: 1 }}>
+        <Typography sx={{ fontWeight: 600, fontSize: '1.05rem' }}>Positions</Typography>
+        <Button size="small" onClick={() => navigate('/trade')} sx={{ fontWeight: 600 }}>
+          Trade
+        </Button>
+      </Box>
+      <Divider />
 
-          <Card elevation={0}>
-            <CardContent sx={{ padding: 0 }}>
-              <TableContainer>
-                <Table>
-                  <TableHead sx={{ backgroundColor: 'rgba(0,0,0,0.03)' }}>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700 }}>Ticker</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 700 }}>Shares</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 700 }}>Avg Cost</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 700 }}>Current Price</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 700 }}>Value</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 700 }}>Return</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {portfolio.holdings.map((holding) => (
-                      <TableRow key={holding.ticker} hover>
-                        <TableCell sx={{ fontWeight: 700 }}>
-                          <Chip
-                            label={holding.ticker}
-                            variant="outlined"
-                            size="small"
-                            sx={{
-                              fontWeight: 700,
-                              borderColor: '#05a854',
-                              color: '#05a854',
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell align="right">{parseFloat(holding.shares).toFixed(2)}</TableCell>
-                        <TableCell align="right">${parseFloat(holding.avgCostPerShare).toFixed(2)}</TableCell>
-                        <TableCell align="right">${parseFloat(holding.currentPrice).toFixed(2)}</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 600 }}>
-                          ${parseFloat(holding.currentValue).toFixed(2)}
-                        </TableCell>
-                        <TableCell
-                          align="right"
-                          sx={{
-                            color: holding.gainLoss >= 0 ? '#05a854' : '#d32f2f',
-                            fontWeight: 700,
-                          }}
-                        >
-                          ${parseFloat(holding.gainLoss).toFixed(2)} ({parseFloat(holding.gainLossPercent).toFixed(2)}%)
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </CardContent>
-          </Card>
-        </>
+      {holdings.length > 0 ? (
+        <Box>
+          {holdings.map((holding, i) => (
+            <React.Fragment key={holding.ticker}>
+              {i > 0 && <Divider />}
+              <HoldingRow holding={holding} onClick={() => navigate('/portfolio')} />
+            </React.Fragment>
+          ))}
+        </Box>
       ) : (
-        <Card elevation={0}>
-          <CardContent sx={{ textAlign: 'center', paddingY: 8 }}>
-            <TrendingUpIcon sx={{ fontSize: 64, color: 'text.secondary', marginBottom: 2 }} />
-            <Typography variant="h6" sx={{ fontWeight: 600, marginBottom: 1 }}>
-              Start Trading Today
-            </Typography>
-            <Typography variant="body2" sx={{ color: 'text.secondary', marginBottom: 3 }}>
-              You don't have any holdings yet. Begin your investment journey.
-            </Typography>
-            <Button
-              variant="contained"
-              onClick={() => navigate('/trade')}
-              sx={{
-                backgroundColor: '#05a854',
-                '&:hover': { backgroundColor: '#0d8f47' },
-              }}
-              size="large"
-            >
-              Make Your First Trade
-            </Button>
-          </CardContent>
-        </Card>
+        <Box sx={{ py: 7, textAlign: 'center' }}>
+          <Typography sx={{ fontWeight: 600, mb: 0.5 }}>No positions yet</Typography>
+          <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
+            Your buying power is {currency(portfolio?.currentBalance)}.
+          </Typography>
+          <Button variant="contained" onClick={() => navigate('/trade')} disableElevation>
+            Make your first trade
+          </Button>
+        </Box>
       )}
     </Container>
   );
