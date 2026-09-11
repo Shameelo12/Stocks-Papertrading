@@ -11,8 +11,12 @@ export default function Layout({ children }) {
       {/* Navbar */}
       <Navbar onMenuClick={() => setSidebarOpen(true)} />
 
-      {/* Content Area (Sidebar + Main) */}
-      <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      {/* Sidebar + main.
+          minHeight: 0 is load-bearing. A flex item defaults to min-height:auto,
+          which refuses to shrink below its content; without this the row is sized
+          by the page content instead of the viewport, and the sidebar stops
+          wherever the content happens to end rather than reaching the bottom. */}
+      <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
         {/* Sidebar */}
         <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 

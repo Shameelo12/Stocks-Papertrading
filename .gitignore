@@ -10,6 +10,11 @@ frontend/dist/
 frontend/.env
 frontend/.env.local
 
+# Real secrets live in .env files; only .env.example is tracked.
+.env
+.env.*
+!.env.example
+
 # IDE
 .vscode/
 *.swp

@@ -107,8 +107,15 @@ createdb papertrading
 
 ### 2. Configuration
 
-All configuration is read from environment variables, with the defaults below applied
-when a variable is unset. See `backend/.env.example`.
+Copy the template and fill in what you need. `backend/.env` is gitignored; real
+values never belong in the repository.
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Every setting below falls back to the listed default when absent, so the app runs
+with an empty `.env`. Anything set in the real environment overrides the file.
 
 | Variable | Default | Notes |
 |---|---|---|
@@ -117,14 +124,27 @@ when a variable is unset. See `backend/.env.example`.
 | `DB_NAME` | `papertrading` | |
 | `DB_USER` | `postgres` | |
 | `DB_PASSWORD` | `postgres` | |
-| `JWT_SECRET` | insecure placeholder | **Set this.** Minimum 256 bits. |
+| `JWT_SECRET` | insecure placeholder | **Set this.** Minimum 256 bits — `openssl rand -base64 48` |
 | `JWT_EXPIRATION` | `86400000` | Token lifetime, ms (24h) |
-| `FINNHUB_API_KEY` | *(empty)* | Free key at [finnhub.io](https://finnhub.io). Without it the app uses mock prices. |
+| `FINNHUB_API_KEY` | *(empty)* | Free key at [finnhub.io](https://finnhub.io/register). See below. |
+| `STARTING_BALANCE` | `10000.00` | Opening cash for new accounts |
+| `PRICE_CACHE_TTL_SECONDS` | `10` | How long a fetched price is reused |
 
-```bash
-export JWT_SECRET="$(openssl rand -base64 48)"
-export FINNHUB_API_KEY="your_key_here"
+#### Live market data
+
+Without `FINNHUB_API_KEY` the app still runs, but prices come from a small static
+fallback list and never change — so profit and loss always reads `0.00` and the
+portfolio chart is flat. That is the fallback working as designed, not a bug.
+
+Register at [finnhub.io](https://finnhub.io/register), put the key in
+`backend/.env`, and restart the backend:
+
 ```
+FINNHUB_API_KEY=your_key_here
+```
+
+Quotes are cached for `PRICE_CACHE_TTL_SECONDS`, which keeps the app inside the
+free tier's 60-calls-per-minute limit.
 
 ### 3. Backend
 

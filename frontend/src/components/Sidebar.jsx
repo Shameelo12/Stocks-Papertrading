@@ -170,7 +170,11 @@ export default function Sidebar({ open, onClose }) {
           borderRight: '1px solid',
           borderColor: 'divider',
           bgcolor: 'background.paper',
-          height: '100%',
+          // Stretch to the row rather than height:100%. A percentage height needs
+          // a parent with a definite height, and the parent's is computed by flex
+          // layout — so height:100% collapsed to the content height and the panel
+          // ended partway down the page. align-items:stretch is the default, so
+          // simply not setting a height makes it fill.
           overflow: 'auto',
         }}
       >

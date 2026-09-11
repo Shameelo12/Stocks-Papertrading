@@ -58,6 +58,15 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Reads backend/.env into the Spring environment. .env.example has always
+             documented this workflow, but nothing actually loaded the file, so a key
+             placed there was silently ignored and prices fell back to mock data. -->
+        <dependency>
+            <groupId>me.paulschwarz</groupId>
+            <artifactId>spring-dotenv</artifactId>
+            <version>4.0.0</version>
+        </dependency>
+
         <!-- Flyway: versioned schema migrations. Hibernate's ddl-auto cannot add a
              NOT NULL column to a populated table and fails silently when it tries. -->
         <dependency>
