@@ -58,6 +58,17 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Flyway: versioned schema migrations. Hibernate's ddl-auto cannot add a
+             NOT NULL column to a populated table and fails silently when it tries. -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
+
         <!-- JWT (jjwt) -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
