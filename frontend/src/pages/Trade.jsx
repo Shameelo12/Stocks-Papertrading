@@ -1,653 +1,465 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Box,
+  Container,
   TextField,
   Button,
-  Card,
-  CardContent,
   Typography,
   Alert,
   CircularProgress,
-  ButtonGroup,
   Paper,
   List,
-  ListItem,
   ListItemButton,
   ListItemText,
-  Chip,
-  LinearProgress,
+  Divider,
+  ToggleButton,
+  ToggleButtonGroup,
+  InputAdornment,
+  IconButton,
+  useTheme,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import { useAuth } from '../context/AuthContext';
+import CloseIcon from '@mui/icons-material/Close';
 import { usePortfolio } from '../hooks/usePortfolio';
-import API, { unwrapList } from '../api/axios';
+import API, { unwrapList, apiErrorMessage } from '../api/axios';
+import { currency, shares as fmtShares } from '../utils/format';
+
+const SEARCH_DEBOUNCE_MS = 300;
+
+/** Label/value line used in the order summary. */
+function SummaryLine({ label, value, strong }) {
+  return (
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, py: 0.75 }}>
+      <Typography variant="body2" sx={{ color: strong ? 'text.primary' : 'text.secondary' }}>
+        {label}
+      </Typography>
+      <Typography
+        variant="body2"
+        sx={{ fontWeight: strong ? 600 : 500, fontVariantNumeric: 'tabular-nums' }}
+      >
+        {value}
+      </Typography>
+    </Box>
+  );
+}
 
 export default function Trade() {
-  const { user } = useAuth();
-  const { portfolio, refetch: refetchPortfolio } = usePortfolio(false); // No auto-refresh, manual refresh after trade
-  const [searchQuery, setSearchQuery] = useState('');
+  const theme = useTheme();
+  const { portfolio, refetch: refetchPortfolio } = usePortfolio(false);
+
+  const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const searchContainerRef = useRef(null);
-  const [stockPrice, setStockPrice] = useState(null);
-  const [shares, setShares] = useState('');
-  const [loading, setLoading] = useState(false);
+  const searchRef = useRef(null);
+
+  const [quote, setQuote] = useState(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
+
+  const [side, setSide] = useState('buy');
+  const [orderType, setOrderType] = useState('market');
+  const [shareCount, setShareCount] = useState('');
+  const [limitPrice, setLimitPrice] = useState('');
+
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [tradeType, setTradeType] = useState('buy');
-  const [orderType, setOrderType] = useState('market');
-  const [limitPrice, setLimitPrice] = useState('');
   const [pendingOrders, setPendingOrders] = useState([]);
 
-  useEffect(() => {
-    fetchPendingOrders();
+  const successTimer = useRef(null);
+
+  /** Show a transient confirmation, replacing any already on screen. */
+  const flashSuccess = useCallback((text) => {
+    setSuccess(text);
+    clearTimeout(successTimer.current);
+    successTimer.current = setTimeout(() => setSuccess(''), 5000);
   }, []);
 
+  // Clearing the timer on unmount avoids setting state on a component that is
+  // already gone if the user navigates away inside the five seconds.
+  useEffect(() => () => clearTimeout(successTimer.current), []);
+
+  const loadPendingOrders = useCallback(async () => {
+    try {
+      const res = await API.get('/orders/pending');
+      setPendingOrders(unwrapList(res.data));
+    } catch {
+      /* the form still works without this list */
+    }
+  }, []);
+
+  useEffect(() => { loadPendingOrders(); }, [loadPendingOrders]);
+
+  /**
+   * Debounced symbol search.
+   *
+   * Previously this fired a request on every keystroke, so typing "AAPL" cost
+   * four round trips and the responses could arrive out of order.
+   */
   useEffect(() => {
-    if (searchQuery.trim()) {
-      fetchSuggestions();
-    } else {
+    const term = query.trim();
+    if (!term) {
       setSuggestions([]);
       setShowSuggestions(false);
+      return;
     }
-  }, [searchQuery]);
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await API.get('/stocks/suggestions', { params: { q: term } });
+        if (cancelled) return;
+        setSuggestions(unwrapList(res.data));
+        setShowSuggestions(true);
+      } catch {
+        if (!cancelled) setSuggestions([]);
+      }
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [query]);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
-        setShowSuggestions(false);
-      }
+    if (!showSuggestions) return;
+    const onClickOutside = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) setShowSuggestions(false);
     };
-
-    if (showSuggestions) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
   }, [showSuggestions]);
 
-  const fetchSuggestions = async () => {
+  const loadQuote = async (ticker) => {
+    setQuoteLoading(true);
+    setError('');
+    setQuote(null);
     try {
-      const response = await API.get(`/stocks/suggestions?q=${searchQuery}`);
-      setSuggestions(response.data);
-      setShowSuggestions(true);
+      const res = await API.get(`/stocks/${ticker}/price`);
+      setQuote(res.data);
     } catch (err) {
-      setSuggestions([]);
+      setError(apiErrorMessage(err, `Couldn't find a price for ${ticker}. Check the symbol and try again.`));
+    } finally {
+      setQuoteLoading(false);
     }
   };
 
-  const handleSelectStock = async (ticker) => {
-    setSearchQuery(ticker);
+  const selectTicker = (ticker) => {
+    setQuery(ticker);
     setShowSuggestions(false);
     setSuggestions([]);
-    fetchStockPrice(ticker);
+    loadQuote(ticker);
   };
 
-  const fetchStockPrice = async (ticker) => {
-    setLoading(true);
-    setError('');
-    setStockPrice(null);
-
-    try {
-      const response = await API.get(`/stocks/${ticker}/price`);
-      setStockPrice(response.data);
-    } catch (err) {
-      setError('Unable to fetch stock price. Please try another ticker.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSearch = async (e) => {
+  const handleSearchSubmit = (e) => {
     e.preventDefault();
-    if (!searchQuery.trim()) return;
-    setShowSuggestions(false);
-    fetchStockPrice(searchQuery.toUpperCase());
+    const term = query.trim().toUpperCase();
+    if (term) { setShowSuggestions(false); loadQuote(term); }
   };
 
-  const handleTrade = async () => {
-    if (!stockPrice || !shares || parseFloat(shares) <= 0) {
-      setError('Please enter a valid number of shares');
-      return;
-    }
-
-    const sharesNum = parseFloat(shares);
-
-    if (orderType === 'limit' && (!limitPrice || parseFloat(limitPrice) <= 0)) {
-      setError('Please enter a valid limit price');
-      return;
-    }
-
-    const totalCost = sharesNum * parseFloat(stockPrice.price);
-
-    // Validation logic for market orders only
-    if (orderType === 'market') {
-      if (tradeType === 'buy') {
-        if (totalCost > portfolio?.currentBalance) {
-          setError(`Insufficient buying power. Required: $${totalCost.toFixed(2)}, Available: $${portfolio?.currentBalance?.toFixed(2)}`);
-          return;
-        }
-      } else {
-        // For sell
-        const holding = portfolio?.holdings?.find(h => h.ticker === stockPrice.ticker);
-        if (!holding) {
-          setError(`You don't own any shares of ${stockPrice.ticker}`);
-          return;
-        }
-        if (sharesNum > parseFloat(holding.shares)) {
-          setError(`You only own ${parseFloat(holding.shares).toFixed(2)} shares of ${stockPrice.ticker}`);
-          return;
-        }
-      }
-    }
-
-    setLoading(true);
+  const clearSelection = () => {
+    setQuote(null);
+    setQuery('');
+    setShareCount('');
+    setLimitPrice('');
     setError('');
-    setSuccess('');
+  };
 
+  // ---- derived order state -------------------------------------------------
+
+  const buyingPower = Number(portfolio?.currentBalance ?? 0);
+  const held = quote ? portfolio?.holdings?.find((h) => h.ticker === quote.ticker) : null;
+  const heldShares = Number(held?.shares ?? 0);
+
+  const qty = parseFloat(shareCount) || 0;
+  const unitPrice = orderType === 'limit'
+    ? (parseFloat(limitPrice) || 0)
+    : Number(quote?.price ?? 0);
+  const estimate = qty * unitPrice;
+
+  /** The single reason the order cannot be placed, or null when it can. */
+  const blocker = (() => {
+    if (!quote) return null;
+    if (qty <= 0) return 'Enter how many shares you want.';
+    if (orderType === 'limit' && !(parseFloat(limitPrice) > 0)) return 'Enter a limit price.';
+    if (side === 'buy' && orderType === 'market' && estimate > buyingPower) {
+      return `That costs ${currency(estimate)} — more than your ${currency(buyingPower)} buying power.`;
+    }
+    if (side === 'sell') {
+      if (!held) return `You don't own any ${quote.ticker}.`;
+      if (qty > heldShares) return `You only own ${fmtShares(heldShares)} shares of ${quote.ticker}.`;
+    }
+    return null;
+  })();
+
+  const canSubmit = Boolean(quote) && !blocker && !submitting;
+
+  const handleSubmit = async () => {
+    if (!canSubmit) return;
+    setSubmitting(true);
+    setError('');
     try {
       if (orderType === 'limit') {
-        // Create limit order
         await API.post('/orders', {
-          ticker: stockPrice.ticker,
-          type: tradeType.toUpperCase(),
-          shares: sharesNum,
+          ticker: quote.ticker,
+          type: side.toUpperCase(),
+          shares: qty,
           limitPrice: parseFloat(limitPrice),
         });
-        setSuccess(`Limit ${tradeType.toUpperCase()} order created!`);
-        fetchPendingOrders();
+        flashSuccess(
+          `Limit ${side} placed: ${fmtShares(qty)} ${quote.ticker} at ${currency(limitPrice)}. `
+          + `It will fill automatically when the price is reached.`
+        );
+        loadPendingOrders();
       } else {
-        // Market order
-        const endpoint = tradeType === 'buy' ? '/trade/buy' : '/trade/sell';
-        const response = await API.post(endpoint, {
-          ticker: stockPrice.ticker,
-          shares: sharesNum,
+        await API.post(side === 'buy' ? '/trade/buy' : '/trade/sell', {
+          ticker: quote.ticker,
+          shares: qty,
         });
-
-        // Refetch portfolio to update all values
         await refetchPortfolio();
-
-        setSuccess(`${tradeType.toUpperCase()} successful! New balance: $${response.data.balance.toFixed(2)}`);
+        flashSuccess(
+          `${side === 'buy' ? 'Bought' : 'Sold'} ${fmtShares(qty)} ${quote.ticker} `
+          + `for ${currency(estimate)}.`
+        );
       }
-
-      setShares('');
-      setLimitPrice('');
-      setStockPrice(null);
-      setSearchQuery('');
-      setTimeout(() => setSuccess(''), 4000);
+      clearSelection();
     } catch (err) {
-      setError(err.response?.data?.error || `Order failed. Please try again.`);
+      setError(apiErrorMessage(err, 'That order could not be placed. Please try again.'));
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchPendingOrders = async () => {
-    try {
-      const response = await API.get('/orders/pending');
-      setPendingOrders(unwrapList(response.data));
-    } catch (err) {
-      console.error('Failed to fetch pending orders:', err);
+      setSubmitting(false);
     }
   };
 
   const handleCancelOrder = async (orderId) => {
     try {
       await API.delete(`/orders/${orderId}`);
-      fetchPendingOrders();
-      setSuccess('Order cancelled');
-      setTimeout(() => setSuccess(''), 3000);
+      loadPendingOrders();
+      flashSuccess('Order cancelled.');
     } catch (err) {
-      setError('Failed to cancel order');
+      setError(apiErrorMessage(err, 'That order could not be cancelled.'));
     }
   };
 
-  const totalCost = stockPrice && shares ? (parseFloat(shares) || 0) * parseFloat(stockPrice.price) : 0;
-  const currentBalance = portfolio?.currentBalance || user?.balance || 0;
-  const canAfford = totalCost <= currentBalance;
-  const buyingPower = currentBalance;
-
-  // For sell, check if user owns enough shares
-  const userHolding = stockPrice ? portfolio?.holdings?.find(h => h.ticker === stockPrice.ticker) : null;
-  const canSell = userHolding && parseFloat(shares) <= parseFloat(userHolding.shares);
+  const sideColor = side === 'buy' ? theme.palette.success.main : theme.palette.error.main;
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Box sx={{ flex: 1, width: '100%', paddingX: 2, paddingY: 4 }}>
-        <Box sx={{ textAlign: 'center', marginBottom: 5, maxWidth: '1200px', marginX: 'auto', width: '100%' }}>
-          <Typography variant="h3" sx={{ fontWeight: 700, color: 'text.primary', marginBottom: 1 }}>
-            Trade Stocks
-          </Typography>
-          <Typography variant="body1" sx={{ color: '#666' }}>
-            Search for a stock and make your trade
-          </Typography>
-        </Box>
+    <Container maxWidth="sm" sx={{ py: { xs: 3, md: 5 } }}>
+      <Typography
+        variant="caption"
+        sx={{ color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em' }}
+      >
+        Trade
+      </Typography>
+      <Typography sx={{ fontSize: '1.75rem', fontWeight: 600, letterSpacing: '-0.02em', mt: 0.5, mb: 3 }}>
+        {currency(buyingPower)} buying power
+      </Typography>
 
-        <Card
-          elevation={0}
-          sx={{
-            boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-            borderRadius: '16px',
-            border: '1px solid rgba(0,0,0,0.04)',
-            marginBottom: 4,
-            overflow: 'visible',
-            maxWidth: '1200px',
-            marginX: 'auto',
-            width: '100%',
-          }}
-        >
-          <CardContent sx={{ padding: 4 }}>
-            <Typography variant="h6" sx={{ marginBottom: 3, fontWeight: 700 }}>
-              Find Your Stock
-            </Typography>
+      {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-            <Box sx={{ position: 'relative' }} ref={searchContainerRef}>
-              <form onSubmit={handleSearch}>
-                <TextField
-                  fullWidth
-                  label="Stock Ticker or Company Name"
-                  placeholder="e.g., AAPL, Apple, GOOGL"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  disabled={loading}
-                  variant="outlined"
-                  sx={{
-                    marginBottom: showSuggestions && suggestions.length > 0 ? 0 : 2,
-                    '& .MuiOutlinedInput-root': {
-                      fontSize: '16px',
-                    },
-                  }}
-                />
-                {showSuggestions && suggestions.length > 0 && (
-                  <Paper
-                    elevation={2}
-                    sx={{
-                      position: 'absolute',
-                      top: '100%',
-                      left: 0,
-                      right: 0,
-                      zIndex: 10,
-                      maxHeight: '300px',
-                      overflow: 'auto',
-                      marginTop: 1,
-                      borderRadius: '12px',
-                    }}
-                  >
-                    <List sx={{ padding: 0 }}>
-                      {suggestions.map((stock) => (
-                        <ListItemButton
-                          key={stock.ticker}
-                          onClick={() => handleSelectStock(stock.ticker)}
-                          sx={{
-                            padding: '12px 16px',
-                            borderBottom: '1px solid rgba(0,0,0,0.04)',
-                            '&:last-child': {
-                              borderBottom: 'none',
-                            },
-                            '&:hover': {
-                              backgroundColor: '#f0f7ff',
-                            },
-                          }}
-                        >
-                          <ListItemText
-                            primary={stock.ticker}
-                            secondary={stock.name}
-                            primaryTypographyProps={{ sx: { fontWeight: 600, color: '#05a854' } }}
-                            secondaryTypographyProps={{ sx: { color: '#666' } }}
-                          />
-                        </ListItemButton>
-                      ))}
-                    </List>
-                  </Paper>
-                )}
-              </form>
-
-              <Button
-                onClick={handleSearch}
-                fullWidth
-                variant="contained"
-                startIcon={<SearchIcon />}
-                disabled={loading || !searchQuery.trim()}
-                sx={{
-                  marginTop: 2,
-                  padding: '14px',
-                  fontSize: '16px',
-                  fontWeight: 600,
-                  backgroundColor: '#05a854',
-                  borderRadius: '10px',
-                  boxShadow: '0 4px 12px rgba(5, 168, 84, 0.2)',
-                  '&:hover': {
-                    backgroundColor: '#0d8f47',
-                    boxShadow: '0 6px 16px rgba(5, 168, 84, 0.3)',
-                    transform: 'translateY(-2px)',
-                  },
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                {loading ? <CircularProgress size={24} sx={{ color: 'white' }} /> : 'Search'}
-              </Button>
-            </Box>
-
-            {error && <Alert severity="error" sx={{ marginTop: 2 }}>{error}</Alert>}
-          </CardContent>
-        </Card>
-
-        {stockPrice && (
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3, marginBottom: 4, maxWidth: '1200px', marginX: 'auto', width: '100%' }}>
-            <Card
-              elevation={0}
-              sx={{
-                background: 'linear-gradient(135deg, #1f3a5f 0%, #2a5298 100%)',
-                color: 'white',
-                boxShadow: '0 12px 32px rgba(31, 58, 95, 0.25)',
-                borderRadius: '16px',
-                border: '1px solid rgba(255,255,255,0.1)',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: '0 16px 40px rgba(31, 58, 95, 0.35)',
-                },
-              }}
-            >
-              <CardContent sx={{ padding: 3 }}>
-                <Typography variant="body2" sx={{ opacity: 0.85, marginBottom: 1, fontWeight: 500 }}>
-                  Current Price
-                </Typography>
-                <Typography variant="h2" sx={{ marginBottom: 2, fontWeight: 700 }}>
-                  ${parseFloat(stockPrice.price).toFixed(2)}
-                </Typography>
-                <Typography variant="h5" sx={{ opacity: 0.95, marginBottom: 1, fontWeight: 700 }}>
-                  {stockPrice.ticker}
-                </Typography>
-                <Typography variant="caption" sx={{ opacity: 0.75 }}>
-                  Updated: {new Date(stockPrice.timestamp).toLocaleTimeString()}
-                </Typography>
-              </CardContent>
-            </Card>
-
-            <Card
-              elevation={0}
-              sx={{
-                boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-                borderRadius: '16px',
-                border: '1px solid rgba(0,0,0,0.04)',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
-                },
-              }}
-            >
-              <CardContent sx={{ padding: 3 }}>
-                <Typography variant="h6" sx={{ marginBottom: 3, fontWeight: 700 }}>
-                  Execute Trade
-                </Typography>
-
-                <ButtonGroup fullWidth sx={{ marginBottom: 3 }}>
-                  <Button
-                    variant={tradeType === 'buy' ? 'contained' : 'outlined'}
-                    onClick={() => setTradeType('buy')}
-                    sx={{
-                      padding: '12px',
-                      fontWeight: 700,
-                      fontSize: '15px',
-                      backgroundColor: tradeType === 'buy' ? '#05a854' : 'transparent',
-                      color: tradeType === 'buy' ? 'white' : '#05a854',
-                      borderColor: '#05a854',
-                      borderRadius: '10px',
-                      '&:hover': {
-                        backgroundColor: tradeType === 'buy' ? '#0d8f47' : 'rgba(5, 168, 84, 0.05)',
-                      },
-                    }}
-                  >
-                    BUY
-                  </Button>
-                  <Button
-                    variant={tradeType === 'sell' ? 'contained' : 'outlined'}
-                    onClick={() => setTradeType('sell')}
-                    sx={{
-                      padding: '12px',
-                      fontWeight: 700,
-                      fontSize: '15px',
-                      backgroundColor: tradeType === 'sell' ? '#d32f2f' : 'transparent',
-                      color: tradeType === 'sell' ? 'white' : '#d32f2f',
-                      borderColor: '#d32f2f',
-                      borderRadius: '10px',
-                      '&:hover': {
-                        backgroundColor: tradeType === 'sell' ? '#b71c1c' : 'rgba(211, 47, 47, 0.05)',
-                      },
-                    }}
-                  >
-                    SELL
-                  </Button>
-                </ButtonGroup>
-
-                <TextField
-                  fullWidth
-                  label="Number of Shares"
-                  type="number"
-                  value={shares}
-                  onChange={(e) => setShares(e.target.value)}
-                  disabled={loading}
-                  variant="outlined"
-                  margin="normal"
-                  inputProps={{ step: '0.01', min: '0' }}
-                  sx={{ marginBottom: 2 }}
-                />
-
-                <Box sx={{ marginBottom: 2 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 600, marginBottom: 1 }}>
-                    Order Type
-                  </Typography>
-                  <ButtonGroup fullWidth size="small">
-                    <Button
-                      variant={orderType === 'market' ? 'contained' : 'outlined'}
-                      onClick={() => setOrderType('market')}
-                      sx={{
-                        backgroundColor: orderType === 'market' ? '#05a854' : 'transparent',
-                        color: orderType === 'market' ? 'white' : '#05a854',
-                        borderColor: '#05a854',
-                      }}
-                    >
-                      Market
-                    </Button>
-                    <Button
-                      variant={orderType === 'limit' ? 'contained' : 'outlined'}
-                      onClick={() => setOrderType('limit')}
-                      sx={{
-                        backgroundColor: orderType === 'limit' ? '#05a854' : 'transparent',
-                        color: orderType === 'limit' ? 'white' : '#05a854',
-                        borderColor: '#05a854',
-                      }}
-                    >
-                      Limit
-                    </Button>
-                  </ButtonGroup>
-                </Box>
-
-                {orderType === 'limit' && (
-                  <TextField
-                    fullWidth
-                    label="Limit Price"
-                    type="number"
-                    value={limitPrice}
-                    onChange={(e) => setLimitPrice(e.target.value)}
-                    disabled={loading}
-                    variant="outlined"
-                    margin="normal"
-                    inputProps={{ step: '0.01', min: '0' }}
-                    sx={{ marginBottom: 2 }}
-                  />
-                )}
-              </CardContent>
-            </Card>
-          </Box>
-        )}
-
-        {stockPrice && (
-          <Card
-            elevation={0}
-            sx={{
-              boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-              borderRadius: '16px',
-              border: '1px solid rgba(0,0,0,0.04)',
-              marginBottom: 4,
-              maxWidth: '1200px',
-              marginX: 'auto',
-              width: '100%',
+      {/* Symbol search */}
+      <Box ref={searchRef} sx={{ position: 'relative' }}>
+        <form onSubmit={handleSearchSubmit}>
+          <TextField
+            fullWidth
+            placeholder="Search a symbol, e.g. AAPL"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => suggestions.length && setShowSuggestions(true)}
+            autoComplete="off"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: 'text.disabled', fontSize: '1.2rem' }} />
+                </InputAdornment>
+              ),
+              endAdornment: quoteLoading ? (
+                <InputAdornment position="end"><CircularProgress size={16} /></InputAdornment>
+              ) : quote ? (
+                <InputAdornment position="end">
+                  <IconButton size="small" onClick={clearSelection} aria-label="Clear selection">
+                    <CloseIcon sx={{ fontSize: '1rem' }} />
+                  </IconButton>
+                </InputAdornment>
+              ) : null,
             }}
+          />
+        </form>
+
+        {showSuggestions && suggestions.length > 0 && (
+          <Paper
+            elevation={4}
+            sx={{ position: 'absolute', top: '100%', left: 0, right: 0, mt: 0.5, zIndex: 20, overflow: 'hidden' }}
           >
-            <CardContent sx={{ padding: 4 }}>
-              <Box sx={{ backgroundColor: 'rgba(0,0,0,0.02)', padding: 3, borderRadius: '12px', marginBottom: 3, border: '1px solid rgba(0,0,0,0.08)' }}>
-                <Box sx={{ marginBottom: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', marginBottom: 1 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      {tradeType === 'buy' ? 'Buying Power' : 'Shares Held'}
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#05a854' }}>
-                      {tradeType === 'buy' ? `$${buyingPower.toFixed(2)}` : (userHolding ? parseFloat(userHolding.shares).toFixed(2) : '0.00')}
-                    </Typography>
-                  </Box>
-                  <LinearProgress
-                    variant="determinate"
-                    value={
-                      tradeType === 'buy'
-                        ? Math.min(100, (totalCost / buyingPower) * 100 || 0)
-                        : Math.min(100, (parseFloat(shares || 0) / parseFloat(userHolding?.shares || 1)) * 100 || 0)
-                    }
-                    sx={{
-                      height: 8,
-                      borderRadius: '4px',
-                      backgroundColor: 'rgba(0,0,0,0.1)',
-                      '& .MuiLinearProgress-bar': {
-                        backgroundColor: totalCost > buyingPower && tradeType === 'buy' ? '#d32f2f' : '#05a854',
-                      },
-                    }}
+            <List disablePadding>
+              {suggestions.slice(0, 6).map((s) => (
+                <ListItemButton key={s.ticker} onClick={() => selectTicker(s.ticker)}>
+                  <ListItemText
+                    primary={s.ticker}
+                    secondary={s.name}
+                    primaryTypographyProps={{ fontWeight: 600, fontSize: '0.9rem' }}
+                    secondaryTypographyProps={{ fontSize: '0.78rem' }}
                   />
-                </Box>
-
-                <Typography variant="body1" sx={{ marginBottom: 2, fontSize: '16px' }}>
-                  <strong>Total {tradeType === 'buy' ? 'Cost' : 'Value'}:</strong> <span style={{ color: '#05a854', fontWeight: 700 }}>${totalCost.toFixed(2)}</span>
-                </Typography>
-
-                {tradeType === 'buy' && (
-                  <>
-                    <Typography variant="body2" sx={{ marginBottom: 1, color: canAfford ? 'text.secondary' : '#d32f2f', fontWeight: canAfford ? 400 : 600 }}>
-                      Available Cash: <strong>${buyingPower.toFixed(2)}</strong>
-                    </Typography>
-                    {!canAfford && (
-                      <Alert severity="error" sx={{ marginTop: 1 }}>
-                        Insufficient buying power. You need ${(totalCost - buyingPower).toFixed(2)} more.
-                      </Alert>
-                    )}
-                  </>
-                )}
-
-                {tradeType === 'sell' && (
-                  <>
-                    <Typography variant="body2" sx={{ marginBottom: 1, color: 'text.secondary' }}>
-                      You own: <strong>{userHolding ? parseFloat(userHolding.shares).toFixed(2) : '0.00'}</strong> shares
-                    </Typography>
-                    {!canSell && userHolding && (
-                      <Alert severity="error" sx={{ marginTop: 1 }}>
-                        You can only sell {parseFloat(userHolding.shares).toFixed(2)} shares.
-                      </Alert>
-                    )}
-                  </>
-                )}
-              </Box>
-
-              {success && <Alert severity="success" sx={{ marginBottom: 2 }}>{success}</Alert>}
-              {error && <Alert severity="error" sx={{ marginBottom: 2 }}>{error}</Alert>}
-
-              <Button
-                fullWidth
-                variant="contained"
-                onClick={handleTrade}
-                disabled={loading || !shares || parseFloat(shares) <= 0 || (tradeType === 'buy' && !canAfford) || (tradeType === 'sell' && !canSell)}
-                sx={{
-                  backgroundColor: tradeType === 'buy' ? '#05a854' : '#d32f2f',
-                  padding: '16px',
-                  fontSize: '16px',
-                  fontWeight: 700,
-                  borderRadius: '10px',
-                  boxShadow: tradeType === 'buy' ? '0 6px 16px rgba(5, 168, 84, 0.25)' : '0 6px 16px rgba(211, 47, 47, 0.25)',
-                  '&:hover:not(:disabled)': {
-                    backgroundColor: tradeType === 'buy' ? '#0d8f47' : '#b71c1c',
-                    boxShadow: tradeType === 'buy' ? '0 8px 20px rgba(5, 168, 84, 0.35)' : '0 8px 20px rgba(211, 47, 47, 0.35)',
-                    transform: 'translateY(-2px)',
-                  },
-                  '&:disabled': {
-                    opacity: 0.5,
-                    cursor: 'not-allowed',
-                  },
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                {loading ? <CircularProgress size={24} sx={{ color: 'white' }} /> : `${tradeType.toUpperCase()} ${shares || '0'} ${stockPrice?.ticker || 'Shares'}`}
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {pendingOrders.length > 0 && (
-          <Card
-            elevation={0}
-            sx={{
-              boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-              borderRadius: '16px',
-              border: '1px solid rgba(0,0,0,0.04)',
-              maxWidth: '1200px',
-              marginX: 'auto',
-              width: '100%',
-            }}
-          >
-            <CardContent sx={{ padding: 3 }}>
-              <Typography variant="h6" sx={{ marginBottom: 3, fontWeight: 700 }}>
-                Pending Limit Orders ({pendingOrders.length})
-              </Typography>
-              <Box sx={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr>
-                      <th style={{ textAlign: 'left', paddingBottom: '8px', fontWeight: 600 }}>Ticker</th>
-                      <th style={{ textAlign: 'right', paddingBottom: '8px', fontWeight: 600 }}>Type</th>
-                      <th style={{ textAlign: 'right', paddingBottom: '8px', fontWeight: 600 }}>Shares</th>
-                      <th style={{ textAlign: 'right', paddingBottom: '8px', fontWeight: 600 }}>Limit Price</th>
-                      <th style={{ textAlign: 'center', paddingBottom: '8px', fontWeight: 600 }}>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pendingOrders.map((order) => (
-                      <tr key={order.id} style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-                        <td style={{ padding: '12px 0' }}>
-                          <Chip label={order.ticker} size="small" sx={{ fontWeight: 600 }} />
-                        </td>
-                        <td style={{ textAlign: 'right', padding: '12px 0' }}>
-                          <Chip
-                            label={order.type}
-                            size="small"
-                            sx={{
-                              backgroundColor: order.type === 'BUY' ? 'rgba(5, 168, 84, 0.2)' : 'rgba(211, 47, 47, 0.2)',
-                              color: order.type === 'BUY' ? '#05a854' : '#d32f2f',
-                            }}
-                          />
-                        </td>
-                        <td style={{ textAlign: 'right', padding: '12px 0' }}>{parseFloat(order.shares).toFixed(2)}</td>
-                        <td style={{ textAlign: 'right', padding: '12px 0' }}>${parseFloat(order.limitPrice).toFixed(2)}</td>
-                        <td style={{ textAlign: 'center', padding: '12px 0' }}>
-                          <Button size="small" color="error" onClick={() => handleCancelOrder(order.id)}>
-                            Cancel
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </Box>
-            </CardContent>
-          </Card>
+                </ListItemButton>
+              ))}
+            </List>
+          </Paper>
         )}
       </Box>
-    </Box>
+
+      {/* Order ticket */}
+      {quote && (
+        <Box sx={{ mt: 4 }}>
+          <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 2 }}>
+            <Typography sx={{ fontSize: '1.35rem', fontWeight: 600 }}>{quote.ticker}</Typography>
+            <Typography sx={{ fontSize: '1.35rem', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+              {currency(quote.price)}
+            </Typography>
+          </Box>
+          {heldShares > 0 && (
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+              You own {fmtShares(heldShares)} shares
+            </Typography>
+          )}
+
+          <ToggleButtonGroup
+            fullWidth
+            exclusive
+            value={side}
+            onChange={(_, v) => v && setSide(v)}
+            sx={{
+              mt: 3,
+              '& .MuiToggleButton-root.Mui-selected': {
+                backgroundColor: `${sideColor}1A`,
+                color: sideColor,
+                borderColor: sideColor,
+                '&:hover': { backgroundColor: `${sideColor}26` },
+              },
+            }}
+          >
+            <ToggleButton value="buy" sx={{ fontWeight: 600 }}>Buy</ToggleButton>
+            <ToggleButton value="sell" sx={{ fontWeight: 600 }}>Sell</ToggleButton>
+          </ToggleButtonGroup>
+
+          <ToggleButtonGroup
+            fullWidth
+            exclusive
+            size="small"
+            value={orderType}
+            onChange={(_, v) => v && setOrderType(v)}
+            sx={{ mt: 1.5 }}
+          >
+            <ToggleButton value="market">Market</ToggleButton>
+            <ToggleButton value="limit">Limit</ToggleButton>
+          </ToggleButtonGroup>
+
+          <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
+            <TextField
+              label="Shares"
+              type="number"
+              value={shareCount}
+              onChange={(e) => setShareCount(e.target.value)}
+              inputProps={{ min: 0, step: 'any' }}
+              fullWidth
+            />
+            {orderType === 'limit' && (
+              <TextField
+                label="Limit price"
+                type="number"
+                value={limitPrice}
+                onChange={(e) => setLimitPrice(e.target.value)}
+                inputProps={{ min: 0, step: '0.01' }}
+                InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
+                fullWidth
+              />
+            )}
+          </Box>
+
+          <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+            <SummaryLine
+              label={orderType === 'limit' ? 'Limit price' : 'Market price'}
+              value={unitPrice > 0 ? currency(unitPrice) : '—'}
+            />
+            <SummaryLine label="Shares" value={qty > 0 ? fmtShares(qty) : '—'} />
+            <SummaryLine
+              label={side === 'buy' ? 'Estimated cost' : 'Estimated proceeds'}
+              value={estimate > 0 ? currency(estimate) : '—'}
+              strong
+            />
+            {side === 'buy' && (
+              <SummaryLine
+                label="Buying power after"
+                value={estimate > 0 ? currency(buyingPower - estimate) : currency(buyingPower)}
+              />
+            )}
+          </Box>
+
+          {blocker && (
+            <Typography variant="body2" sx={{ color: 'text.secondary', mt: 2 }}>
+              {blocker}
+            </Typography>
+          )}
+
+          <Button
+            fullWidth
+            variant="contained"
+            size="large"
+            disableElevation
+            disabled={!canSubmit}
+            onClick={handleSubmit}
+            sx={{
+              mt: 2.5,
+              py: 1.4,
+              backgroundColor: sideColor,
+              '&:hover': { backgroundColor: sideColor, filter: 'brightness(0.92)' },
+            }}
+          >
+            {submitting
+              ? 'Placing…'
+              : orderType === 'limit'
+                ? `Place limit ${side}`
+                : `${side === 'buy' ? 'Buy' : 'Sell'} ${quote.ticker}`}
+          </Button>
+
+          {orderType === 'limit' && (
+            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 1.5 }}>
+              {side === 'buy'
+                ? 'Fills automatically when the price falls to your limit or below.'
+                : 'Fills automatically when the price rises to your limit or above.'}
+            </Typography>
+          )}
+        </Box>
+      )}
+
+      {/* Open orders */}
+      {pendingOrders.length > 0 && (
+        <Box sx={{ mt: 6 }}>
+          <Typography sx={{ fontWeight: 600, fontSize: '1.05rem', mb: 1 }}>
+            Open orders
+          </Typography>
+          <Divider />
+          {pendingOrders.map((order, i) => (
+            <React.Fragment key={order.id}>
+              {i > 0 && <Divider />}
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, py: 2 }}>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography sx={{ fontWeight: 600 }}>
+                    {order.type === 'BUY' ? 'Buy' : 'Sell'} {order.ticker}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary', fontVariantNumeric: 'tabular-nums' }}>
+                    {fmtShares(order.shares)} shares at {currency(order.limitPrice)}
+                  </Typography>
+                </Box>
+                <Button
+                  size="small"
+                  color="error"
+                  onClick={() => handleCancelOrder(order.id)}
+                  aria-label={`Cancel ${order.type} order for ${order.ticker}`}
+                >
+                  Cancel
+                </Button>
+              </Box>
+            </React.Fragment>
+          ))}
+        </Box>
+      )}
+    </Container>
   );
 }

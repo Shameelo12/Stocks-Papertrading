@@ -1,18 +1,14 @@
 package com.papertrading.controller;
 
 import com.papertrading.dto.TradeRequest;
-import com.papertrading.dto.TradeResponse;
-import com.papertrading.model.Holding;
 import com.papertrading.model.User;
 import com.papertrading.service.TradeService;
 import com.papertrading.service.UserService;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -27,35 +23,30 @@ public class TradeController {
         this.userService = userService;
     }
 
+    // Failures deliberately propagate to GlobalExceptionHandler rather than being
+    // caught here. Catching them locally produced a {"error": "..."} body while
+    // every other endpoint returned the ErrorResponse shape {"message": "..."},
+    // so clients had to special-case these two routes to read an error message.
+
     @PostMapping("/buy")
     public ResponseEntity<Map<String, Object>> buy(@Valid @RequestBody TradeRequest request, Authentication auth) {
-        try {
-            User user = userService.getCurrentUser(auth);
-            tradeService.buy(user, request);
+        User user = userService.getCurrentUser(auth);
+        tradeService.buy(user, request);
 
-            return ResponseEntity.ok(Map.of(
-                    "balance", user.getBalance(),
-                    "message", "Buy successful"
-            ));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
-        }
+        return ResponseEntity.ok(Map.of(
+                "balance", user.getBalance(),
+                "message", "Buy successful"
+        ));
     }
 
     @PostMapping("/sell")
     public ResponseEntity<Map<String, Object>> sell(@Valid @RequestBody TradeRequest request, Authentication auth) {
-        try {
-            User user = userService.getCurrentUser(auth);
-            tradeService.sell(user, request);
+        User user = userService.getCurrentUser(auth);
+        tradeService.sell(user, request);
 
-            return ResponseEntity.ok(Map.of(
-                    "balance", user.getBalance(),
-                    "message", "Sell successful"
-            ));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
-        }
+        return ResponseEntity.ok(Map.of(
+                "balance", user.getBalance(),
+                "message", "Sell successful"
+        ));
     }
 }
