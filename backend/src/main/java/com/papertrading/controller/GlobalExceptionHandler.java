@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -54,6 +55,25 @@ public class GlobalExceptionHandler {
                 HttpStatus.CONFLICT.value(),
                 "State Conflict",
                 ex.getMessage(),
+                request.getDescription(false).replace("uri=", "")
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    /**
+     * Raised when two writes to the same row interleave — most often two trades
+     * from the same account at once. The write was rejected rather than applied,
+     * so nothing is corrupted and the caller can simply retry.
+     */
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponse> handleOptimisticLockFailure(
+            ObjectOptimisticLockingFailureException ex, WebRequest request) {
+        logger.warn("Optimistic lock conflict: {}", ex.getMessage());
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                "Concurrent Modification",
+                "That account was changed by another request while this one was in flight. "
+                        + "Nothing was applied — please try again.",
                 request.getDescription(false).replace("uri=", "")
         );
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);

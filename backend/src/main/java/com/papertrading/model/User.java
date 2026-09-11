@@ -21,6 +21,23 @@ public class User {
     @Column(nullable = false)
     private BigDecimal balance;
 
+    /**
+     * Optimistic lock guard on the cash balance.
+     *
+     * <p>Without this, two concurrent trades could each read the same balance,
+     * each pass their own affordability check, and both commit — overdrawing the
+     * account. Hibernate appends {@code AND version = ?} to every update and bumps
+     * the value, so the second writer updates zero rows and fails instead of
+     * silently clobbering the first.
+     *
+     * <p>Optimistic rather than pessimistic locking because conflicts are rare:
+     * the contending writes are nearly always the same user in two tabs, not
+     * sustained contention worth holding a row lock for.
+     */
+    @Version
+    @Column(nullable = false)
+    private Long version = 0L;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
@@ -66,6 +83,10 @@ public class User {
 
     public void setBalance(BigDecimal balance) {
         this.balance = balance;
+    }
+
+    public Long getVersion() {
+        return version;
     }
 
     public LocalDateTime getCreatedAt() {
