@@ -10,4 +10,7 @@ public interface PendingOrderRepository extends JpaRepository<PendingOrder, Stri
     List<PendingOrder> findByUserAndStatus(User user, PendingOrder.OrderStatus status);
     List<PendingOrder> findByUser(User user);
     void deleteByIdAndUser(String id, User user);
+
+    /** Every unfilled order, across all users — the scheduler's work queue. */
+    List<PendingOrder> findByStatus(PendingOrder.OrderStatus status);
 }

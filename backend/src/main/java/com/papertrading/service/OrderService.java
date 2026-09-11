@@ -63,10 +63,27 @@ public class OrderService {
         orderRepository.save(order);
     }
 
-    public void checkAndExecutePendingOrders(User user) {
-        List<PendingOrder> pendingOrders = orderRepository.findByUserAndStatus(user, PendingOrder.OrderStatus.PENDING);
+    /** Evaluates one user's unfilled orders. Invoked on demand from the API. */
+    public int checkAndExecutePendingOrders(User user) {
+        return processOrders(orderRepository.findByUserAndStatus(user, PendingOrder.OrderStatus.PENDING));
+    }
 
-        for (PendingOrder order : pendingOrders) {
+    /**
+     * Evaluates every unfilled order in the system. Invoked by the scheduler, so
+     * an order fills when its price is reached rather than when its owner happens
+     * to refresh the page.
+     */
+    public int checkAndExecuteAllPendingOrders() {
+        return processOrders(orderRepository.findByStatus(PendingOrder.OrderStatus.PENDING));
+    }
+
+    /**
+     * @return how many of {@code orders} were filled
+     */
+    private int processOrders(List<PendingOrder> orders) {
+        int executed = 0;
+
+        for (PendingOrder order : orders) {
             try {
                 // Skip rather than defaulting to the limit price. Defaulting made the
                 // comparison below trivially true, so a failed price lookup would
@@ -78,21 +95,26 @@ public class OrderService {
                 }
                 BigDecimal currentPrice = priceOpt.get();
 
-                boolean shouldExecute = false;
-                if (order.getType() == PendingOrder.OrderType.BUY && currentPrice.compareTo(order.getLimitPrice()) <= 0) {
-                    shouldExecute = true;
-                } else if (order.getType() == PendingOrder.OrderType.SELL && currentPrice.compareTo(order.getLimitPrice()) >= 0) {
-                    shouldExecute = true;
-                }
-
-                if (shouldExecute) {
+                if (shouldExecute(order, currentPrice)) {
                     executeOrder(order, currentPrice);
+                    executed++;
                 }
             } catch (Exception e) {
                 // Log and continue: one bad order must not stop the rest of the batch.
                 logger.error("Error processing order {}: {}", order.getId(), e.getMessage());
             }
         }
+
+        return executed;
+    }
+
+    /**
+     * A buy fills at or below its limit; a sell fills at or above it.
+     */
+    private boolean shouldExecute(PendingOrder order, BigDecimal currentPrice) {
+        return order.getType() == PendingOrder.OrderType.BUY
+                ? currentPrice.compareTo(order.getLimitPrice()) <= 0
+                : currentPrice.compareTo(order.getLimitPrice()) >= 0;
     }
 
     private void executeOrder(PendingOrder order, BigDecimal executionPrice) {
